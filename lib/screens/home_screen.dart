@@ -8,10 +8,10 @@ import 'package:calculadora_electronica/screens/resistor_series_parallel_screen.
 import 'package:calculadora_electronica/screens/resistor_color_table_screen.dart';
 import 'package:calculadora_electronica/screens/units_and_prefixes_screen.dart';
 import 'package:calculadora_electronica/screens/electronic_symbols_screen.dart';
-import 'package:calculadora_electronica/screens/about_screen.dart'; // Importa la pantalla de Acerca de
-import 'package:calculadora_electronica/screens/smd_calculator_screen.dart'; // Importa la calculadora SMD
-import 'package:calculadora_electronica/utils/custom_page_route.dart'; // Importa la ruta personalizada
-import 'package:calculadora_electronica/main.dart'; // Importa para ThemeProvider
+import 'package:calculadora_electronica/screens/rc_circuit_simulator_screen.dart';
+import 'package:calculadora_electronica/screens/about_screen.dart';
+import 'package:calculadora_electronica/screens/smd_calculator_screen.dart'; // ¡Nueva importación para SMD!
+import 'package:calculadora_electronica/main.dart'; // Importa main.dart para ThemeProvider
 
 class HomeScreen extends StatelessWidget {
   final ThemeProvider themeProvider;
@@ -20,89 +20,6 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> menuOptions = [
-      {
-        'title': 'Ley de Ohm',
-        'description': 'Calcula voltaje, corriente y resistencia.',
-        'icon': Icons.flash_on,
-        'color': Colors.deepPurple,
-        'screen': const OhmLawScreen(),
-      },
-      {
-        'title': 'Código de Colores de Resistencias',
-        'description':
-            'Determina el valor de una resistencia por sus bandas de color.',
-        'icon': Icons.colorize,
-        'color': Colors.teal,
-        'screen': const ResistorColorCodeScreen(),
-      },
-      {
-        'title': 'Divisor de Voltaje',
-        'description': 'Calcula el voltaje de salida en un circuito divisor.',
-        'icon': Icons.electrical_services,
-        'color': Colors.indigo,
-        'screen': const VoltageDividerScreen(),
-      },
-      {
-        'title': 'Resistencia para LED',
-        'description': 'Calcula la resistencia necesaria para un LED.',
-        'icon': Icons.lightbulb_outline,
-        'color': Colors.amber,
-        'screen': const LedResistorScreen(),
-      },
-      {
-        'title': 'Resistencias S/P',
-        'description':
-            'Calcula la resistencia equivalente en serie y paralelo.',
-        'icon': Icons.waves,
-        'color': Colors.deepOrange,
-        'screen': const ResistorSeriesParallelScreen(),
-      },
-      {
-        'title': 'Capacitores S/P',
-        'description':
-            'Calcula la capacitancia equivalente en serie y paralelo.',
-        'icon': Icons.speed,
-        'color': Colors.indigo,
-        'screen': const CapacitorCalculatorScreen(),
-      },
-      {
-        'title': 'Tabla Código Colores',
-        'description': 'Consulta rápida de valores de bandas de resistencia.',
-        'icon': Icons.palette,
-        'color': Colors.blueGrey,
-        'screen': const ResistorColorTableScreen(),
-      },
-      {
-        'title': 'Unidades y Prefijos',
-        'description': 'Referencia de unidades electrónicas y prefijos SI.',
-        'icon': Icons.straighten,
-        'color': Colors.teal,
-        'screen': const UnitsAndPrefixesScreen(),
-      },
-      {
-        'title': 'Símbolos Electrónicos',
-        'description': 'Referencia de símbolos esquemáticos comunes.',
-        'icon': Icons.device_hub,
-        'color': Colors.indigo,
-        'screen': const ElectronicSymbolsScreen(),
-      },
-      {
-        'title': 'Calculadora SMD',
-        'description': 'Decodifica códigos de resistencias SMD.',
-        'icon': Icons.qr_code,
-        'color': Colors.brown,
-        'screen': const SmdCalculatorScreen(),
-      },
-      {
-        'title': 'Acerca de la App',
-        'description': 'Información sobre la aplicación y el desarrollador.',
-        'icon': Icons.info_outline,
-        'color': Colors.grey,
-        'screen': const AboutScreen(),
-      },
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Calculadora Electrónica'),
@@ -123,112 +40,160 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Builder(
-        builder: (context) {
-          final screenWidth = MediaQuery.of(context).size.width;
-          final double horizontalPadding = screenWidth > 600 ? 32.0 : 16.0;
-          final double verticalPadding = screenWidth > 600 ? 24.0 : 16.0;
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16.0,
+            mainAxisSpacing: 16.0,
+            children: <Widget>[
+              _buildFeatureCard(
+                context,
+                'Ley de Ohm',
+                'Calcula Voltaje, Corriente, Resistencia y Potencia.',
+                Icons.flash_on,
+                OhmLawScreen(),
+                Colors.orange,
+              ),
+              _buildFeatureCard(
+                context,
+                'Código Colores Resistencia',
+                'Decodifica resistencias por su código de colores.',
+                Icons.color_lens,
+                ResistorColorCodeScreen(),
+                Colors.purple,
+              ),
+              _buildFeatureCard(
+                context,
+                'Divisor de Voltaje',
+                'Calcula el voltaje de salida en un divisor resistivo.',
+                Icons.grain,
+                VoltageDividerScreen(),
+                Colors.teal,
+              ),
+              _buildFeatureCard(
+                context,
+                'Resistencia para LED',
+                'Calcula la resistencia necesaria para un LED.',
+                Icons.lightbulb_outline,
+                LedResistorScreen(),
+                Colors.yellow[700]!,
+              ),
+              _buildFeatureCard(
+                context,
+                'Capacitores S/P',
+                'Calcula la capacitancia equivalente en serie y paralelo.',
+                Icons.offline_bolt,
+                CapacitorCalculatorScreen(),
+                Colors.blue,
+              ),
+              _buildFeatureCard(
+                context,
+                'Resistencias S/P',
+                'Calcula la resistencia equivalente en serie y paralelo.',
+                Icons.line_axis,
+                ResistorSeriesParallelScreen(),
+                Colors.brown,
+              ),
+              _buildFeatureCard(
+                context,
+                'Tabla Colores Resistencia',
+                'Consulta los valores estándar del código de colores.',
+                Icons.table_chart,
+                ResistorColorTableScreen(),
+                Colors.grey,
+              ),
+              _buildFeatureCard(
+                context,
+                'Unidades y Prefijos',
+                'Herramienta de conversión de unidades y prefijos.',
+                Icons.straighten,
+                UnitsAndPrefixesScreen(),
+                Colors.indigo,
+              ),
+              _buildFeatureCard(
+                context,
+                'Símbolos Electrónicos',
+                'Guía de símbolos electrónicos comunes.',
+                Icons.schema,
+                ElectronicSymbolsScreen(),
+                Colors.cyan,
+              ),
+              _buildFeatureCard(
+                context,
+                'Simulador Circuito RC',
+                'Simula la carga y descarga de un capacitor en un circuito RC.',
+                Icons.timeline,
+                const RCCircuitSimulatorScreen(),
+                Colors.green,
+              ),
+              _buildFeatureCard(
+                context,
+                'Calculadora SMD', // ¡Nueva tarjeta!
+                'Calcula valores de componentes SMD por su código.',
+                Icons
+                    .fiber_manual_record, // Un ícono que evoca componentes pequeños
+                const SMDCalculatorScreen(), // Navega a la nueva pantalla SMD
+                Colors.deepPurple, // Color personalizado
+              ),
+              _buildFeatureCard(
+                context,
+                'Acerca de',
+                'Información sobre la aplicación.',
+                Icons.info_outline,
+                const AboutScreen(),
+                Colors.pink,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-          return Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: horizontalPadding,
-              vertical: verticalPadding,
-            ),
-            child: Column(
-              children: <Widget>[
-                const Text(
-                  'Bienvenido a la Calculadora Electrónica',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueAccent,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Selecciona una opción:',
-                  style: TextStyle(fontSize: 18, color: Colors.black54),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final double itemWidth =
-                          180.0; // Ancho mínimo deseado por tarjeta
-                      int crossAxisCount = (constraints.maxWidth / itemWidth)
-                          .floor();
-                      if (crossAxisCount < 1)
-                        crossAxisCount = 1; // Asegurarse de al menos 1 columna
-
-                      return GridView.builder(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          crossAxisSpacing: 16.0,
-                          mainAxisSpacing: 16.0,
-                          childAspectRatio: 0.95,
-                        ),
-                        itemCount: menuOptions.length,
-                        itemBuilder: (context, index) {
-                          final option = menuOptions[index];
-                          return Card(
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  FadePageRoute(child: option['screen']),
-                                );
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      option['icon'],
-                                      size: 40,
-                                      color: option['color'],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      option['title'],
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      option['description'],
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildFeatureCard(
+    BuildContext context,
+    String title,
+    String description,
+    IconData icon,
+    Widget screen,
+    Color iconColor,
+  ) {
+    return Card(
+      elevation: 4.0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => screen),
           );
         },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: iconColor),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                description,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

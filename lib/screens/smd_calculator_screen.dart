@@ -1,17 +1,42 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math; // Ya deberías tener esta línea
+import 'dart:math' as math;
 
-class SmdCalculatorScreen extends StatefulWidget {
-  const SmdCalculatorScreen({super.key});
+// Nueva clase para almacenar los resultados de cada componente
+class SmdComponentData {
+  final String type;
+  final String value;
+  final String explanation;
 
-  @override
-  State<SmdCalculatorScreen> createState() => _SmdCalculatorScreenState();
+  SmdComponentData({
+    required this.type,
+    required this.value,
+    required this.explanation,
+  });
 }
 
-class _SmdCalculatorScreenState extends State<SmdCalculatorScreen> {
+class SMDCalculatorScreen extends StatefulWidget {
+  const SMDCalculatorScreen({super.key});
+
+  @override
+  State<SMDCalculatorScreen> createState() => _SMDCalculatorScreenState();
+}
+
+class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
   final TextEditingController _smdCodeController = TextEditingController();
   String _result = '';
   String _explanation = '';
+  String _componentType = '';
+
+  final List<String> _componentTypesOptions = [
+    'Auto-Detectar',
+    'Resistencia',
+    'Capacitor',
+    'Inductor',
+    'Diodo',
+    'Transistor',
+    'Circuito Integrado',
+  ];
+  String _selectedComponentType = 'Auto-Detectar'; // Valor por defecto
 
   @override
   void dispose() {
@@ -23,73 +48,270 @@ class _SmdCalculatorScreenState extends State<SmdCalculatorScreen> {
     String code = _smdCodeController.text.trim().toUpperCase();
     _result = '';
     _explanation = '';
+    _componentType = '';
 
     if (code.isEmpty) {
       setState(() {
         _result = 'Por favor, introduce un código SMD.';
+        _componentType = 'Error';
       });
       return;
     }
 
-    // Lógica para códigos SMD de 3 y 4 dígitos (Resistencias)
-    if (RegExp(r'^\d{3}$').hasMatch(code)) {
-      // 3 dígitos: XYK (XY = valor, K = multiplicador)
-      int value = int.parse(code.substring(0, 2));
-      int multiplier = int.parse(code.substring(2, 3));
-      // Corrección aquí: .toDouble() para math.pow
-      double resistance = value * math.pow(10, multiplier).toDouble();
-      _result = 'Resistencia: ${_formatResistance(resistance)}Ω';
-      _explanation =
-          'Código de 3 dígitos: Los primeros dos dígitos son el valor, el tercero es el número de ceros.';
-    } else if (RegExp(r'^\d{4}$').hasMatch(code)) {
-      // 4 dígitos: XYZK (XYZ = valor, K = multiplicador)
-      int value = int.parse(code.substring(0, 3));
-      int multiplier = int.parse(code.substring(3, 4));
-      // Corrección aquí: .toDouble() para math.pow
-      double resistance = value * math.pow(10, multiplier).toDouble();
-      _result = 'Resistencia: ${_formatResistance(resistance)}Ω';
-      _explanation =
-          'Código de 4 dígitos: Los primeros tres dígitos son el valor, el cuarto es el número de ceros.';
-    } else if (RegExp(r'^\d+[RKM]$', caseSensitive: false).hasMatch(code)) {
-      // Código con "R", "K", "M" (ej. 4R7, 10K, 2M2)
-      // Ajuste de regex para permitir números de múltiples dígitos antes de R/K/M
-      String numericPart = code.substring(0, code.length - 1);
-      String unit = code.substring(code.length - 1).toUpperCase();
-      double multiplier = 1.0;
+    List<SmdComponentData> possibleResults = [];
 
-      if (unit == 'R') multiplier = 1.0;
-      if (unit == 'K') multiplier = 1000.0;
-      if (unit == 'M') multiplier = 1000000.0;
+    if (_selectedComponentType == 'Auto-Detectar') {
+      SmdComponentData? resResult = _parseResistance(code);
+      if (resResult != null) {
+        possibleResults.add(resResult);
+      }
 
-      // Reemplaza 'R', 'K', 'M' en la parte numérica por un punto decimal
-      String valueStr = numericPart.replaceAll(
-        RegExp(r'[RKM]', caseSensitive: false),
-        '.',
-      );
-      double value = double.tryParse(valueStr) ?? 0.0;
+      SmdComponentData? capResult = _parseCapacitor(code);
+      if (capResult != null) {
+        possibleResults.add(capResult);
+      }
 
-      double resistance = value * multiplier;
-      _result = 'Resistencia: ${_formatResistance(resistance)}Ω';
-      _explanation =
-          'Código con R/K/M: R=punto decimal (Ohmios), K=kiloOhmios, M=MegaOhmios.';
+      SmdComponentData? indResult = _parseInductor(code);
+      if (indResult != null) {
+        possibleResults.add(indResult);
+      }
+
+      if (possibleResults.isEmpty) {
+        _result = 'Código no reconocido para ningún componente común (R/C/L).';
+        _explanation =
+            'Verifica el formato del código o selecciona un tipo específico.';
+        _componentType = 'Desconocido';
+      } else if (possibleResults.length == 1) {
+        _componentType = possibleResults.first.type;
+        _result = 'Valor: ${possibleResults.first.value}';
+        _explanation = possibleResults.first.explanation;
+      } else {
+        // Si hay múltiples resultados (ambigüedad)
+        _componentType = 'Múltiples Posibilidades';
+        _result = 'El código podría ser:';
+        _explanation = possibleResults
+            .map((e) => '- ${e.type}: ${e.value}\n  (${e.explanation})')
+            .join('\n\n');
+      }
+    } else if (_selectedComponentType == 'Resistencia') {
+      SmdComponentData? resResult = _parseResistance(code);
+      if (resResult != null) {
+        _componentType = resResult.type;
+        _result = 'Valor: ${resResult.value}';
+        _explanation = resResult.explanation;
+      } else {
+        _result = 'Código no reconocido como Resistencia.';
+        _explanation =
+            'Por favor, verifica el código. Ejemplos: 103 (10kΩ), 4702 (47kΩ), 4R7 (4.7Ω).';
+        _componentType = 'Resistencia';
+      }
+    } else if (_selectedComponentType == 'Capacitor') {
+      SmdComponentData? capResult = _parseCapacitor(code);
+      if (capResult != null) {
+        _componentType = capResult.type;
+        _result = 'Valor: ${capResult.value}';
+        _explanation = capResult.explanation;
+      } else {
+        _result = 'Código no reconocido como Capacitor.';
+        _explanation =
+            'Por favor, verifica el código. Ejemplos: 104 (100nF), 220 (22pF), 4R7 (4.7pF).';
+        _componentType = 'Capacitor';
+      }
+    } else if (_selectedComponentType == 'Inductor') {
+      SmdComponentData? indResult = _parseInductor(code);
+      if (indResult != null) {
+        _componentType = indResult.type;
+        _result = 'Valor: ${indResult.value}';
+        _explanation = indResult.explanation;
+      } else {
+        _result = 'Código no reconocido como Inductor.';
+        _explanation =
+            'Por favor, verifica el código. Ejemplos: 100 (10nH), 2R2 (2.2nH), 1N5 (1.5nH).';
+        _componentType = 'Inductor';
+      }
     } else {
-      _result =
-          'Código no reconocido. Intenta con 3 o 4 dígitos, o formato XRY/XK/XM.';
+      // Para Diodos, Transistores, Circuitos Integrados (no soportados)
+      _result = 'Cálculo no soportado para $_selectedComponentType.';
       _explanation =
-          'Ejemplos: 103 (10kΩ), 4702 (47kΩ), 4R7 (4.7Ω), 10K (10kΩ), 2M2 (2.2MΩ).';
+          'Las marcas de $_selectedComponentType son complejas y no estandarizadas. Consulta la hoja de datos (datasheet) del fabricante.';
+      _componentType = _selectedComponentType;
     }
 
     setState(() {});
   }
 
-  String _formatResistance(double value) {
-    if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(value % 1000000 == 0 ? 0 : 2)}M';
-    } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 2)}k';
-    } else {
-      return value.toStringAsFixed(value % 1 == 0 ? 0 : 2);
+  // --- Lógica de Parsing para RESISTENCIAS ---
+  SmdComponentData? _parseResistance(String code) {
+    if (RegExp(r'^\d{3}$').hasMatch(code)) {
+      int value = int.parse(code.substring(0, 2));
+      int multiplier = int.parse(code.substring(2, 3));
+      double resistance = value * math.pow(10, multiplier).toDouble();
+      return SmdComponentData(
+        type: 'Resistencia',
+        value: '${_formatResistance(resistance)}Ω', // Interpolación aquí
+        explanation:
+            'Código de 3 dígitos (Resistencia): Los primeros dos dígitos son el valor, el tercero es el número de ceros.',
+      );
+    } else if (RegExp(r'^\d{4}$').hasMatch(code)) {
+      int value = int.parse(code.substring(0, 3));
+      int multiplier = int.parse(code.substring(3, 4));
+      double resistance = value * math.pow(10, multiplier).toDouble();
+      return SmdComponentData(
+        type: 'Resistencia',
+        value: '${_formatResistance(resistance)}Ω', // Interpolación aquí
+        explanation:
+            'Código de 4 dígitos (Resistencia): Los primeros tres dígitos son el valor, el cuarto es el número de ceros.',
+      );
+    } else if (RegExp(r'^\d*[RKM]$', caseSensitive: false).hasMatch(code)) {
+      String numericPart = code.substring(0, code.length - 1);
+      String unitChar = code.substring(code.length - 1).toUpperCase();
+      double multiplier = 1.0;
+
+      if (unitChar == 'R') {
+        multiplier = 1.0;
+      }
+      if (unitChar == 'K') {
+        multiplier = 1000.0;
+      }
+      if (unitChar == 'M') {
+        multiplier = 1000000.0;
+      }
+
+      String valueStr = numericPart.replaceAll('R', '.');
+      double? value = double.tryParse(valueStr);
+
+      if (value != null) {
+        double resistance = value * multiplier;
+        return SmdComponentData(
+          type: 'Resistencia',
+          value: '${_formatResistance(resistance)}Ω', // Interpolación aquí
+          explanation:
+              'Código con R/K/M (Resistencia): R=punto decimal (Ohmios), K=kiloOhmios, M=MegaOhmios.',
+        );
+      }
     }
+    return null; // No reconocido como Resistencia
+  }
+
+  // --- Lógica de Parsing para CAPACITORES ---
+  SmdComponentData? _parseCapacitor(String code) {
+    if (RegExp(r'^\d{3}$').hasMatch(code)) {
+      int value = int.parse(code.substring(0, 2));
+      int multiplier = int.parse(code.substring(2, 3));
+      double capacitance = value * math.pow(10, multiplier).toDouble();
+      return SmdComponentData(
+        type: 'Capacitor',
+        value: '${_formatCapacitance(capacitance)}F', // Interpolación aquí
+        explanation:
+            'Código de 3 dígitos (Capacitor): Los primeros dos dígitos son el valor en pF, el tercero es el número de ceros.',
+      );
+    } else if (RegExp(r'^\d*[R]$', caseSensitive: false).hasMatch(code)) {
+      String valueStr = code.replaceAll('R', '.');
+      double? value = double.tryParse(valueStr);
+      if (value != null) {
+        return SmdComponentData(
+          type: 'Capacitor',
+          value: '${_formatCapacitance(value)}F', // Interpolación aquí
+          explanation:
+              'Código con R (Capacitor): R indica el punto decimal (valor en pF).',
+        );
+      }
+    }
+    return null; // No reconocido como Capacitor
+  }
+
+  // --- Lógica de Parsing para INDUCTORES ---
+  SmdComponentData? _parseInductor(String code) {
+    if (RegExp(r'^\d{3}$').hasMatch(code)) {
+      int value = int.parse(code.substring(0, 2));
+      int multiplier = int.parse(code.substring(2, 3));
+      double inductance = value * math.pow(10, multiplier).toDouble();
+      return SmdComponentData(
+        type: 'Inductor',
+        value: '${_formatInductance(inductance)}H', // Interpolación aquí
+        explanation:
+            'Código de 3 dígitos (Inductor): Los primeros dos dígitos son el valor en nH, el tercero es el número de ceros.',
+      );
+    } else if (RegExp(r'^\d*[R]$', caseSensitive: false).hasMatch(code)) {
+      String valueStr = code.replaceAll('R', '.');
+      double? value = double.tryParse(valueStr);
+      if (value != null) {
+        return SmdComponentData(
+          type: 'Inductor',
+          value: '${_formatInductance(value)}H', // Interpolación aquí
+          explanation:
+              'Código con R (Inductor): R indica el punto decimal (valor en nH).',
+        );
+      }
+    } else if (RegExp(r'^\d*[NMU]$', caseSensitive: false).hasMatch(code)) {
+      String numericPart = code.substring(0, code.length - 1);
+      String unitChar = code.substring(code.length - 1).toUpperCase();
+      double multiplier = 1.0;
+
+      if (unitChar == 'N') {
+        multiplier = 1.0;
+      }
+      if (unitChar == 'M' || unitChar == 'U') {
+        multiplier = 1000.0;
+      }
+
+      String valueStr = numericPart.replaceAll('R', '.');
+      double? value = double.tryParse(valueStr);
+
+      if (value != null) {
+        double inductance = value * multiplier;
+        return SmdComponentData(
+          type: 'Inductor',
+          value: '${_formatInductance(inductance)}H', // Interpolación aquí
+          explanation:
+              'Código con N/M/U (Inductor): N=nanoHenrios, M/U=microHenrios.',
+        );
+      }
+    }
+    return null; // No reconocido como Inductor
+  }
+
+  // --- Funciones de Formato ---
+  String _formatResistance(double value) {
+    if (value >= 1000000000) {
+      return '${(value / 1000000000).toStringAsFixed(value % 1000000000 == 0 ? 0 : 3)}G';
+    }
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(value % 1000000 == 0 ? 0 : 3)}M';
+    }
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 3)}k';
+    }
+    return value.toStringAsFixed(value % 1 == 0 ? 0 : 3);
+  }
+
+  String _formatCapacitance(double value) {
+    if (value >= 1000000000000) {
+      return '${(value / 1000000000000).toStringAsFixed(value % 1000000000000 == 0 ? 0 : 3)}F';
+    }
+    if (value >= 1000000000) {
+      return '${(value / 1000000000).toStringAsFixed(value % 1000000000 == 0 ? 0 : 3)}n';
+    }
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(value % 1000000 == 0 ? 0 : 3)}µ';
+    }
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 3)}n';
+    }
+    return '${value.toStringAsFixed(value % 1 == 0 ? 0 : 3)}p'; // Interpolación aquí
+  }
+
+  String _formatInductance(double value) {
+    if (value >= 1000000000) {
+      return '${(value / 1000000000).toStringAsFixed(value % 1000000000 == 0 ? 0 : 3)}H';
+    }
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(value % 1000000 == 0 ? 0 : 3)}m';
+    }
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 3)}µ';
+    }
+    return '${value.toStringAsFixed(value % 1 == 0 ? 0 : 3)}n'; // Interpolación aquí
   }
 
   @override
@@ -106,19 +328,45 @@ class _SmdCalculatorScreenState extends State<SmdCalculatorScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             const Text(
-              'Calculadora de Códigos de Resistencias SMD',
+              'Calculadora de Códigos de Componentes SMD',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: _selectedComponentType,
+              decoration: InputDecoration(
+                labelText: 'Selecciona Tipo de Componente',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+              ),
+              items: _componentTypesOptions.map((String type) {
+                return DropdownMenuItem<String>(value: type, child: Text(type));
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedComponentType = newValue!;
+                  _smdCodeController.clear();
+                  _result = '';
+                  _explanation = '';
+                  _componentType = '';
+                });
+              },
+            ),
+            const SizedBox(height: 20),
             TextField(
               controller: _smdCodeController,
-              keyboardType: TextInputType.text, // Puede ser alfanumérico
-              textCapitalization: TextCapitalization
-                  .characters, // Para que R, K, M sean mayúsculas
+              keyboardType: TextInputType.text,
+              textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
                 labelText: 'Introduce el código SMD',
-                hintText: 'Ej: 103, 4702, 4R7, 10K, 2M2',
+                hintText:
+                    'Ej: 103 (R/C), 4702 (R), 4R7 (R/C/L), 10K (R), 220 (C), 1N5 (L)',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -129,13 +377,12 @@ class _SmdCalculatorScreenState extends State<SmdCalculatorScreen> {
                     setState(() {
                       _result = '';
                       _explanation = '';
+                      _componentType = '';
                     });
                   },
                 ),
               ),
-              onChanged: (value) {
-                // Puedes recalcular al escribir si quieres, o solo con el botón
-              },
+              onSubmitted: (_) => _calculateSmdValue(),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -153,6 +400,15 @@ class _SmdCalculatorScreenState extends State<SmdCalculatorScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Text(
+                    'Tipo de Componente: $_componentType',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Text(
                     'Resultado:',
                     style: TextStyle(
