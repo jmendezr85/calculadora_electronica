@@ -1,3 +1,18 @@
+buildscript {
+    // CORRECCIÓN: Usar 'val' para definir la variable en Kotlin DSL
+    val kotlin_version = "1.9.0" // O "1.9.22" si usas esa versión
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.1.4")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+    }
+}
+
+// El resto de tu configuración original, que maneja los repositorios para todos los módulos
 allprojects {
     repositories {
         google()

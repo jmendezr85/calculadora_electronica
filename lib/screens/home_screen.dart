@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:calculadora_electronica/main.dart';
 import 'package:calculadora_electronica/screens/ohm_law_screen.dart';
+import 'package:calculadora_electronica/screens/smd_calculator_screen.dart';
 import 'package:calculadora_electronica/screens/resistor_color_code_screen.dart';
-import 'package:calculadora_electronica/screens/voltage_divider_screen.dart';
-import 'package:calculadora_electronica/screens/led_resistor_screen.dart';
 import 'package:calculadora_electronica/screens/capacitor_calculator_screen.dart';
 import 'package:calculadora_electronica/screens/resistor_series_parallel_screen.dart';
-import 'package:calculadora_electronica/screens/resistor_color_table_screen.dart';
-import 'package:calculadora_electronica/screens/units_and_prefixes_screen.dart';
-import 'package:calculadora_electronica/screens/electronic_symbols_screen.dart';
 import 'package:calculadora_electronica/screens/rc_circuit_simulator_screen.dart';
+import 'package:calculadora_electronica/screens/electronic_symbols_screen.dart';
+import 'package:calculadora_electronica/screens/led_resistor_screen.dart';
+import 'package:calculadora_electronica/screens/resistor_color_table_screen.dart';
 import 'package:calculadora_electronica/screens/about_screen.dart';
-import 'package:calculadora_electronica/screens/smd_calculator_screen.dart'; // ¡Nueva importación para SMD!
-import 'package:calculadora_electronica/main.dart'; // Importa main.dart para ThemeProvider
+// Nuevas importaciones para las tarjetas adicionales
+import 'package:calculadora_electronica/screens/unit_converter_screen.dart'; //
+import 'package:calculadora_electronica/screens/units_and_prefixes_screen.dart'; //
+import 'package:calculadora_electronica/screens/voltage_divider_screen.dart'; //
 
 class HomeScreen extends StatelessWidget {
   final ThemeProvider themeProvider;
@@ -26,124 +28,171 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Icon(
-              themeProvider.themeMode == ThemeMode.dark
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
-            ),
-            onPressed: () {
-              themeProvider.toggleTheme(
-                themeProvider.themeMode != ThemeMode.dark,
-              );
+          Switch(
+            value: themeProvider.themeMode == ThemeMode.dark,
+            onChanged: (value) {
+              themeProvider.toggleTheme(value);
             },
+            trackColor: WidgetStateProperty.all(
+              Theme.of(context).colorScheme.tertiary,
+            ),
+            thumbColor: WidgetStateProperty.all(
+              Theme.of(context).colorScheme.onTertiary,
+            ),
           ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16.0,
+                mainAxisSpacing: 16.0,
+                children: <Widget>[
+                  _buildCalculatorCard(
+                    context,
+                    icon: Icons.flash_on,
+                    title: 'Ley de Ohm y Potencia',
+                    destination: const OhmLawScreen(),
+                    color: Colors.blue.shade300,
+                  ),
+                  _buildCalculatorCard(
+                    context,
+                    icon: Icons.qr_code,
+                    title: 'Calculadora SMD',
+                    destination: const SMDCalculatorScreen(),
+                    color: Colors.green.shade300,
+                  ),
+                  _buildCalculatorCard(
+                    context,
+                    icon: Icons.color_lens,
+                    title: 'Código de Colores (Resistencias)',
+                    destination: const ResistorColorCodeScreen(),
+                    color: Colors.orange.shade300,
+                  ),
+                  _buildCalculatorCard(
+                    context,
+                    icon: Icons.electrical_services,
+                    title: 'Resistencias Serie/Paralelo',
+                    destination: const ResistorSeriesParallelScreen(),
+                    color: Colors.purple.shade300,
+                  ),
+                  _buildCalculatorCard(
+                    context,
+                    icon: Icons.ac_unit,
+                    title: 'Calculadora de Capacitores',
+                    destination: const CapacitorCalculatorScreen(),
+                    color: Colors.red.shade300,
+                  ),
+                  _buildCalculatorCard(
+                    context,
+                    icon: Icons.graphic_eq,
+                    title: 'Simulador Circuito RC',
+                    destination: const RCCircuitSimulatorScreen(),
+                    color: Colors.teal.shade300,
+                  ),
+                  _buildCalculatorCard(
+                    context,
+                    icon: Icons.schema,
+                    title: 'Símbolos Electrónicos',
+                    destination: const ElectronicSymbolsScreen(),
+                    color: Colors.brown.shade300,
+                  ),
+                  _buildCalculatorCard(
+                    context,
+                    icon: Icons.lightbulb,
+                    title: 'Resistencia para LED',
+                    destination: const LedResistorScreen(),
+                    color: Colors.lime.shade300,
+                  ),
+                  _buildCalculatorCard(
+                    context,
+                    icon: Icons.table_chart,
+                    title: 'Tabla Códigos Color',
+                    destination: const ResistorColorTableScreen(),
+                    color: Colors.indigo.shade300,
+                  ),
+                  _buildCalculatorCard(
+                    // Nueva tarjeta: Convertidor de Unidades
+                    context,
+                    icon: Icons.transform,
+                    title: 'Convertidor de Unidades',
+                    destination: const UnitConverterScreen(),
+                    color: Colors.cyan.shade600,
+                  ),
+                  _buildCalculatorCard(
+                    // Nueva tarjeta: Unidades y Prefijos
+                    context,
+                    icon: Icons.science,
+                    title: 'Unidades y Prefijos',
+                    destination: const UnitsAndPrefixesScreen(),
+                    color: Colors.deepOrange.shade600,
+                  ),
+                  _buildCalculatorCard(
+                    // Nueva tarjeta: Divisor de Voltaje
+                    context,
+                    icon: Icons.call_split,
+                    title: 'Divisor de Voltaje',
+                    destination: const VoltageDividerScreen(),
+                    color: Colors.blueGrey.shade600,
+                  ),
+                  _buildCalculatorCard(
+                    context,
+                    icon: Icons.info_outline,
+                    title: 'Acerca de la App',
+                    destination: const AboutScreen(),
+                    color: Colors.grey.shade600,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalculatorCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required Widget destination,
+    required Color color,
+  }) {
+    // Corrección para la advertencia de 'withOpacity'
+    final Color cardColor = color.withAlpha((0.8 * 255).round());
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+      color: cardColor,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => destination),
+          );
+        },
+        borderRadius: BorderRadius.circular(15.0),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16.0,
-            mainAxisSpacing: 16.0,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              _buildFeatureCard(
-                context,
-                'Ley de Ohm',
-                'Calcula Voltaje, Corriente, Resistencia y Potencia.',
-                Icons.flash_on,
-                OhmLawScreen(),
-                Colors.orange,
-              ),
-              _buildFeatureCard(
-                context,
-                'Código Colores Resistencia',
-                'Decodifica resistencias por su código de colores.',
-                Icons.color_lens,
-                ResistorColorCodeScreen(),
-                Colors.purple,
-              ),
-              _buildFeatureCard(
-                context,
-                'Divisor de Voltaje',
-                'Calcula el voltaje de salida en un divisor resistivo.',
-                Icons.grain,
-                VoltageDividerScreen(),
-                Colors.teal,
-              ),
-              _buildFeatureCard(
-                context,
-                'Resistencia para LED',
-                'Calcula la resistencia necesaria para un LED.',
-                Icons.lightbulb_outline,
-                LedResistorScreen(),
-                Colors.yellow[700]!,
-              ),
-              _buildFeatureCard(
-                context,
-                'Capacitores S/P',
-                'Calcula la capacitancia equivalente en serie y paralelo.',
-                Icons.offline_bolt,
-                CapacitorCalculatorScreen(),
-                Colors.blue,
-              ),
-              _buildFeatureCard(
-                context,
-                'Resistencias S/P',
-                'Calcula la resistencia equivalente en serie y paralelo.',
-                Icons.line_axis,
-                ResistorSeriesParallelScreen(),
-                Colors.brown,
-              ),
-              _buildFeatureCard(
-                context,
-                'Tabla Colores Resistencia',
-                'Consulta los valores estándar del código de colores.',
-                Icons.table_chart,
-                ResistorColorTableScreen(),
-                Colors.grey,
-              ),
-              _buildFeatureCard(
-                context,
-                'Unidades y Prefijos',
-                'Herramienta de conversión de unidades y prefijos.',
-                Icons.straighten,
-                UnitsAndPrefixesScreen(),
-                Colors.indigo,
-              ),
-              _buildFeatureCard(
-                context,
-                'Símbolos Electrónicos',
-                'Guía de símbolos electrónicos comunes.',
-                Icons.schema,
-                ElectronicSymbolsScreen(),
-                Colors.cyan,
-              ),
-              _buildFeatureCard(
-                context,
-                'Simulador Circuito RC',
-                'Simula la carga y descarga de un capacitor en un circuito RC.',
-                Icons.timeline,
-                const RCCircuitSimulatorScreen(),
-                Colors.green,
-              ),
-              _buildFeatureCard(
-                context,
-                'Calculadora SMD', // ¡Nueva tarjeta!
-                'Calcula valores de componentes SMD por su código.',
-                Icons
-                    .fiber_manual_record, // Un ícono que evoca componentes pequeños
-                const SMDCalculatorScreen(), // Navega a la nueva pantalla SMD
-                Colors.deepPurple, // Color personalizado
-              ),
-              _buildFeatureCard(
-                context,
-                'Acerca de',
-                'Información sobre la aplicación.',
-                Icons.info_outline,
-                const AboutScreen(),
-                Colors.pink,
+              Icon(icon, size: 50, color: Colors.white),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
@@ -151,48 +200,24 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildFeatureCard(
-    BuildContext context,
-    String title,
-    String description,
-    IconData icon,
-    Widget screen,
-    Color iconColor,
-  ) {
-    return Card(
-      elevation: 4.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => screen),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 40, color: iconColor),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 5),
-              Text(
-                description,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+class PlaceholderScreen extends StatelessWidget {
+  final String title;
+  const PlaceholderScreen({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Center(
+        child: Text(
+          'Pantalla de $title en construcción',
+          style: Theme.of(context).textTheme.headlineMedium,
+          textAlign: TextAlign.center,
         ),
       ),
     );

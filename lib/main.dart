@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Asegúrate de que esta importación esté aquí
 import 'package:calculadora_electronica/screens/home_screen.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
+// DEFINICIÓN DE LA CLASE THEMEPROVIDER
 class ThemeProvider extends ChangeNotifier {
   ThemeMode _themeMode =
       ThemeMode.system; // Por defecto, usa el tema del sistema
@@ -80,9 +81,7 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
         appBarTheme: const AppBarTheme(centerTitle: true),
       ),
-      home: HomeScreen(
-        themeProvider: _themeProvider,
-      ), // Pasa el themeProvider a HomeScreen
+      home: HomeScreen(themeProvider: _themeProvider),
     );
   }
 }

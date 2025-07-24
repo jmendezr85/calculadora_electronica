@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
-import 'package:calculadora_electronica/utils/unit_utils.dart';
+import 'package:calculadora_electronica/utils/unit_utils.dart'; // Asegúrate de que esta importación sea correcta
 import 'dart:async';
 
 enum SimulationMode { charging, discharging, both }
@@ -30,564 +30,657 @@ class _RCCircuitSimulatorScreenState extends State<RCCircuitSimulatorScreen> {
   String? _voltageErrorText;
   String? _initialDischargeVoltageErrorText;
 
+  // Valores de los componentes
   double _resistance = 1.0;
   double _capacitance = 1.0;
-  double _voltage = 5.0;
-  double _initialDischargeVoltage = 5.0;
+  double _voltage = 5.0; // Voltaje de la fuente
+  double _initialDischargeVoltage = 5.0; // Voltaje inicial para descarga
 
-  UnitPrefix _selectedResistancePrefix = UnitPrefix.resistancePrefixes[2];
-  UnitPrefix _selectedCapacitancePrefix = UnitPrefix.capacitancePrefixes[2];
+  // Prefijos de unidad seleccionados
+  UnitPrefix _selectedResistancePrefix =
+      UnitPrefix.resistancePrefixes[1]; // Ohms
+  UnitPrefix _selectedCapacitancePrefix =
+      UnitPrefix.capacitancePrefixes[2]; // µF
 
-  final List<FlSpot> _chargingData = [];
-  final List<FlSpot> _dischargingData = [];
-  double _tau = 0.0;
-
-  Timer? _debounceTimer;
-
-  SimulationMode _simulationMode = SimulationMode.both;
-
+  // Modos de simulación y fallos
+  SimulationMode _simulationMode = SimulationMode.charging;
   ResistorFault _selectedResistorFault = ResistorFault.normal;
   CapacitorFault _selectedCapacitorFault = CapacitorFault.normal;
+
+  // Datos para el gráfico - CAMBIADOS A FINAL
+  final List<FlSpot> _chargingData = [];
+  final List<FlSpot> _dischargingData = [];
+  final int _maxDataPoints = 500; // Máximo de puntos para el gráfico
+  double _currentTime = 0.0;
+  Timer? _simulationTimer;
+
+  // Controladores de foco para los TextFields
+  final FocusNode _resistanceFocusNode = FocusNode();
+  final FocusNode _capacitanceFocusNode = FocusNode();
+  final FocusNode _voltageFocusNode = FocusNode();
+  final FocusNode _initialDischargeVoltageFocusNode = FocusNode();
+
+  // Variables para la simulación
+  double tau = 0.0; // Constante de tiempo RC
+
+  // Variables para controlar la resolución de la simulación y la actualización del UI
+  final double _simulationAdvancePerTick =
+      0.01; // Cuántos segundos de simulación avanzar por cada tick del Timer
+  final Duration _timerUpdateFrequency = const Duration(
+    milliseconds: 100,
+  ); // Frecuencia de actualización del UI (100ms = 10 FPS del gráfico)
 
   @override
   void initState() {
     super.initState();
-    _resistanceController.text = '1';
-    _capacitanceController.text = '1';
-    _voltageController.text = _voltage.toStringAsFixed(0);
+    // Inicializa los controladores con los valores por defecto
+    _resistanceController.text = _resistance.toString();
+    _capacitanceController.text = _capacitance.toString();
+    _voltageController.text = _voltage.toString();
     _initialDischargeVoltageController.text = _initialDischargeVoltage
-        .toStringAsFixed(0);
-    _validateInputs(initial: true);
+        .toString();
+
+    // Añade listeners para validar en tiempo real y actualizar valores
+    _resistanceController.addListener(_validateResistance);
+    _capacitanceController.addListener(_validateCapacitance);
+    _voltageController.addListener(_validateVoltage);
+    _initialDischargeVoltageController.addListener(
+      _validateInitialDischargeVoltage,
+    );
+
+    // Añade listeners de foco para validar al perder el foco (opcional, pero útil para UX)
+    _resistanceFocusNode.addListener(_onFocusChange);
+    _capacitanceFocusNode.addListener(_onFocusChange);
+    _voltageFocusNode.addListener(_onFocusChange);
+    _initialDischargeVoltageFocusNode.addListener(_onFocusChange);
+
+    _calculateRCConstant(); // Calcula la constante RC inicial
+  }
+
+  // Método genérico para validar valores numéricos y actualizar variables
+  void _validateAndSetValue({
+    required TextEditingController controller,
+    required UnitPrefix selectedPrefix,
+    required void Function(double) setter,
+    required void Function(String?) setError,
+    required String fieldName,
+    bool allowZero = false,
+    bool allowNegative = false,
+  }) {
+    final String text = controller.text;
+    final double? parsedValue = double.tryParse(text);
+
+    if (parsedValue == null) {
+      setError('Introduce un número válido.');
+      setter(0.0); // O un valor por defecto seguro
+      return;
+    }
+    if (!allowZero && parsedValue == 0) {
+      setError('$fieldName no puede ser cero.');
+      setter(0.0);
+      return;
+    }
+    if (!allowNegative && parsedValue < 0) {
+      setError('$fieldName no puede ser negativo.');
+      setter(0.0);
+      return;
+    }
+
+    final double convertedValue = parsedValue * selectedPrefix.multiplier;
+    setter(convertedValue);
+    setError(null); // Borra el error si la validación es exitosa
+    _calculateRCConstant(); // Recalcula tau al cambiar cualquier valor RC
+  }
+
+  void _validateResistance() => _validateAndSetValue(
+    controller: _resistanceController,
+    selectedPrefix: _selectedResistancePrefix,
+    setter: (value) => _resistance = value,
+    setError: (error) => setState(() => _resistanceErrorText = error),
+    fieldName: 'Resistencia',
+  );
+
+  void _validateCapacitance() => _validateAndSetValue(
+    controller: _capacitanceController,
+    selectedPrefix: _selectedCapacitancePrefix,
+    setter: (value) => _capacitance = value,
+    setError: (error) => setState(() => _capacitanceErrorText = error),
+    fieldName: 'Capacitancia',
+  );
+
+  void _validateVoltage() => _validateAndSetValue(
+    controller: _voltageController,
+    selectedPrefix: UnitPrefix.none, // Ahora UnitPrefix.none existe
+    setter: (value) => _voltage = value,
+    setError: (error) => setState(() => _voltageErrorText = error),
+    fieldName: 'Voltaje',
+    allowZero: true, // El voltaje puede ser 0
+    allowNegative: true, // El voltaje puede ser negativo
+  );
+
+  void _validateInitialDischargeVoltage() => _validateAndSetValue(
+    controller: _initialDischargeVoltageController,
+    selectedPrefix: UnitPrefix.none, // Ahora UnitPrefix.none existe
+    setter: (value) => _initialDischargeVoltage = value,
+    setError: (error) =>
+        setState(() => _initialDischargeVoltageErrorText = error),
+    fieldName: 'Voltaje inicial de descarga',
+    allowZero: true,
+    allowNegative: true,
+  );
+
+  void _onFocusChange() {
+    setState(() {
+      // Forzar la revalidación cuando el foco cambia
+      _validateResistance();
+      _validateCapacitance();
+      _validateVoltage();
+      _validateInitialDischargeVoltage();
+    });
   }
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
+    _simulationTimer?.cancel();
     _resistanceController.dispose();
     _capacitanceController.dispose();
     _voltageController.dispose();
     _initialDischargeVoltageController.dispose();
+    _resistanceFocusNode.dispose();
+    _capacitanceFocusNode.dispose();
+    _voltageFocusNode.dispose();
+    _initialDischargeVoltageFocusNode.dispose();
     super.dispose();
   }
 
-  void _validateInputs({bool initial = false}) {
-    bool allValid = true;
-
-    if (_selectedResistorFault == ResistorFault.normal) {
-      final double? r = double.tryParse(_resistanceController.text);
-      if (r == null || r <= 0) {
-        _resistanceErrorText = 'Debe ser un número positivo.';
-        allValid = false;
-      } else {
-        _resistanceErrorText = null;
-      }
-    } else {
-      _resistanceErrorText = null;
-    }
-
-    if (_selectedCapacitorFault == CapacitorFault.normal) {
-      final double? c = double.tryParse(_capacitanceController.text);
-      if (c == null || c <= 0) {
-        _capacitanceErrorText = 'Debe ser un número positivo.';
-        allValid = false;
-      } else {
-        _capacitanceErrorText = null;
-      }
-    } else {
-      _capacitanceErrorText = null;
-    }
-
-    final double? v = double.tryParse(_voltageController.text);
-    if (v == null || v <= 0) {
-      _voltageErrorText = 'Debe ser un número positivo.';
-      allValid = false;
-    } else {
-      _voltageErrorText = null;
-    }
-
-    if (_simulationMode == SimulationMode.discharging ||
-        _simulationMode == SimulationMode.both) {
-      final double? vid = double.tryParse(
-        _initialDischargeVoltageController.text,
-      );
-      if (vid == null || vid < 0) {
-        // Permitir 0V para descarga inicial
-        _initialDischargeVoltageErrorText =
-            'Debe ser un número positivo o cero.';
-        allValid = false;
-      } else {
-        _initialDischargeVoltageErrorText = null;
-      }
-    } else {
-      _initialDischargeVoltageErrorText = null;
-    }
-
-    if (allValid ||
-        initial ||
-        _resistanceErrorText != null ||
-        _capacitanceErrorText != null ||
-        _voltageErrorText != null ||
-        _initialDischargeVoltageErrorText != null) {
-      setState(() {
-        if (allValid) {
-          _calculateAndPlotInternal(
-            double.tryParse(_resistanceController.text) ?? 1.0,
-            double.tryParse(_capacitanceController.text) ?? 1.0,
-            v!,
-            initialDischargeV:
-                double.tryParse(_initialDischargeVoltageController.text) ?? v,
-          );
-        } else {
-          _chargingData.clear();
-          _dischargingData.clear();
-          _tau = 0.0;
-        }
-      });
-    }
-  }
-
-  void _onInputChanged() {
-    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      _validateInputs();
-    });
-  }
-
-  void _calculateAndPlotInternal(
-    double rawResistance,
-    double rawCapacitance,
-    double rawVoltage, {
-    required double initialDischargeV,
-  }) {
-    // Valores efectivos de R y C basados en el modo de fallo
-    double effectiveResistance;
-    double effectiveCapacitance;
+  void _calculateRCConstant() {
+    // Aplicar fallos
+    double currentResistance = _resistance;
+    double currentCapacitance = _capacitance;
 
     if (_selectedResistorFault == ResistorFault.open) {
-      effectiveResistance = double.infinity;
+      currentResistance =
+          double.infinity; // Resistencia infinita (circuito abierto)
     } else if (_selectedResistorFault == ResistorFault.short) {
-      effectiveResistance = 0.0;
-    } else {
-      effectiveResistance =
-          rawResistance * _selectedResistancePrefix.multiplier;
+      currentResistance = 0.0; // Resistencia cero (cortocircuito)
     }
 
     if (_selectedCapacitorFault == CapacitorFault.open) {
-      effectiveCapacitance =
-          0.0; // Un capacitor abierto actúa como un circuito abierto sin capacidad de almacenar carga
+      currentCapacitance =
+          0.0; // Un capacitor abierto actúa como circuito abierto después de la carga inicial
     } else if (_selectedCapacitorFault == CapacitorFault.short) {
-      effectiveCapacitance = double
-          .infinity; // Un capacitor en cortocircuito es como un cable, su impedancia es casi cero, por lo tanto, la constante de tiempo RC se vuelve instantánea
-    } else {
-      effectiveCapacitance =
-          rawCapacitance * _selectedCapacitancePrefix.multiplier;
+      currentCapacitance = double
+          .infinity; // Un capacitor en cortocircuito actúa como resistencia cero
     }
 
-    _resistance = effectiveResistance;
-    _capacitance = effectiveCapacitance;
-    _voltage = rawVoltage;
-    _initialDischargeVoltage = initialDischargeV;
+    if (currentResistance == double.infinity || currentCapacitance == 0.0) {
+      tau = double.infinity; // Circuito abierto o capacitor abierto
+    } else if (currentResistance == 0.0 ||
+        currentCapacitance == double.infinity) {
+      tau = 0.0; // Cortocircuito o capacitor en cortocircuito
+    } else if (currentResistance.isNaN ||
+        currentCapacitance.isNaN ||
+        currentResistance <= 0 ||
+        currentCapacitance <= 0) {
+      // Manejar casos de entrada no válida o valores no positivos
+      tau = 0.0; // O algún valor que indique un estado no válido
+    } else {
+      tau = currentResistance * currentCapacitance;
+    }
+    setState(() {}); // Forzar la actualización del UI para mostrar el nuevo tau
+  }
 
+  void _startSimulation() {
+    _simulationTimer?.cancel(); // Cancela cualquier simulación previa
     _chargingData.clear();
     _dischargingData.clear();
+    _currentTime = 0.0;
 
-    // Lógica para generar las curvas, manejando los fallos explícitamente
-    if (_selectedResistorFault == ResistorFault.open ||
-        _selectedCapacitorFault == CapacitorFault.open) {
-      // Circuito abierto: no hay carga/descarga. El voltaje del capacitor no cambia.
-      _tau = double.infinity;
-      final double maxTimeForFault = 1.0; // Tiempo para ver la línea plana
+    // Asegurarse de que los valores de entrada son válidos antes de iniciar
+    _validateResistance();
+    _validateCapacitance();
+    _validateVoltage();
+    _validateInitialDischargeVoltage();
 
-      if (_simulationMode == SimulationMode.charging ||
-          _simulationMode == SimulationMode.both) {
-        _chargingData.add(FlSpot(0, 0)); // Empieza en 0V
-        _chargingData.add(FlSpot(maxTimeForFault, 0)); // Se mantiene en 0V
-      }
-      if (_simulationMode == SimulationMode.discharging ||
-          _simulationMode == SimulationMode.both) {
-        _dischargingData.add(
-          FlSpot(0, _initialDischargeVoltage),
-        ); // Empieza en Vo
-        _dischargingData.add(
-          FlSpot(maxTimeForFault, _initialDischargeVoltage),
-        ); // Se mantiene en Vo
-      }
-    } else if (_selectedResistorFault == ResistorFault.short ||
-        _selectedCapacitorFault == CapacitorFault.short) {
-      // Resistor en corto o Capacitor en corto: carga/descarga instantánea
-      _tau = 0.0;
-      final double maxTimeForFault =
-          0.1; // Un tiempo muy corto para mostrar el salto instantáneo
-
-      if (_simulationMode == SimulationMode.charging ||
-          _simulationMode == SimulationMode.both) {
-        if (_selectedCapacitorFault == CapacitorFault.short) {
-          _chargingData.add(FlSpot(0, 0)); // Vc siempre 0
-          _chargingData.add(FlSpot(maxTimeForFault, 0)); // Se mantiene en 0V
-        } else {
-          // Resistor en corto (Carga instantánea a V_fuente)
-          _chargingData.add(FlSpot(0, 0)); // Inicia en 0V
-          _chargingData.add(FlSpot(0.0001, _voltage)); // Salto instantáneo
-          _chargingData.add(
-            FlSpot(maxTimeForFault, _voltage),
-          ); // Se mantiene en V_fuente
-        }
-      }
-
-      if (_simulationMode == SimulationMode.discharging ||
-          _simulationMode == SimulationMode.both) {
-        // Descarga instantánea a 0V
-        _dischargingData.add(
-          FlSpot(0, _initialDischargeVoltage),
-        ); // Inicia en Vo
-        _dischargingData.add(FlSpot(0.0001, 0)); // Salto instantáneo
-        _dischargingData.add(FlSpot(maxTimeForFault, 0)); // Se mantiene en 0V
-      }
-    } else {
-      // Modo normal, sin fallos
-      _tau = _resistance * _capacitance;
-      final double maxTime = _tau * 5;
-
-      if (_simulationMode == SimulationMode.charging ||
-          _simulationMode == SimulationMode.both) {
-        for (double t = 0; t <= maxTime; t += maxTime / 100) {
-          double vc = _voltage * (1 - math.exp(-t / _tau));
-          _chargingData.add(FlSpot(t, vc));
-        }
-      }
-
-      if (_simulationMode == SimulationMode.discharging ||
-          _simulationMode == SimulationMode.both) {
-        for (double t = 0; t <= maxTime; t += maxTime / 100) {
-          double vc = _initialDischargeVoltage * math.exp(-t / _tau);
-          _dischargingData.add(FlSpot(t, vc));
-        }
-      }
+    if (_resistanceErrorText != null ||
+        _capacitanceErrorText != null ||
+        _voltageErrorText != null ||
+        _initialDischargeVoltageErrorText != null ||
+        tau.isNaN) {
+      // Si hay errores en la validación, no iniciar la simulación
+      return;
     }
+
+    // Calcular el tiempo máximo de simulación para cubrir al menos 5 * tau
+    // Si tau es 0 o infinito, establecer un tiempo máximo sensato o adaptativo.
+    double maxTime;
+    if (tau == 0.0) {
+      maxTime =
+          0.01; // Para cortocircuitos o fallos que hacen tau cero, simular muy poco tiempo
+    } else if (tau == double.infinity) {
+      maxTime = 0.01; // Para circuitos abiertos o fallos que hacen tau infinito
+    } else {
+      maxTime = tau * 5; // Simular al menos 5 constantes de tiempo
+      // Asegurarse de que maxTime no sea absurdamente pequeño o grande para la visualización.
+      if (maxTime < 0.1) maxTime = 0.1;
+      if (maxTime > 60.0) {
+        maxTime = 60.0;
+      } // Limitar el tiempo máximo de simulación a 60 segundos, por ejemplo
+    }
+
+    // Si ambos modos no están seleccionados, o si tau es infinito y no es un fallo abierto/corto, o tau es 0
+    if ((_simulationMode == SimulationMode.charging &&
+            (_resistance <= 0 || _capacitance <= 0 || _voltage == 0)) ||
+        (_simulationMode == SimulationMode.discharging &&
+            (_resistance <= 0 ||
+                _capacitance <= 0 ||
+                _initialDischargeVoltage == 0))) {
+      // No tiene sentido simular si los parámetros son inválidos para el modo seleccionado
+      // o si la carga/descarga es instantánea (tau=0) o nunca ocurre (tau=infinito)
+      setState(() {
+        // Podrías mostrar un mensaje aquí si lo deseas
+      });
+      return;
+    }
+
+    _simulationTimer = Timer.periodic(_timerUpdateFrequency, (timer) {
+      setState(() {
+        _currentTime +=
+            _simulationAdvancePerTick; // Avanzar el tiempo de simulación
+
+        // Cálculo para Carga
+        if ((_simulationMode == SimulationMode.charging ||
+            _simulationMode == SimulationMode.both)) {
+          double chargingVoltage;
+          if (tau == 0.0) {
+            // Carga instantánea (cortocircuito)
+            chargingVoltage = _voltage;
+          } else if (tau == double.infinity) {
+            // Nunca carga (circuito abierto)
+            chargingVoltage = 0.0;
+          } else {
+            chargingVoltage = _voltage * (1 - math.exp(-_currentTime / tau));
+          }
+
+          // Asegurarse de que no se añadan más puntos de los necesarios
+          if (_chargingData.length < _maxDataPoints) {
+            _chargingData.add(FlSpot(_currentTime, chargingVoltage));
+          }
+        }
+
+        // Cálculo para Descarga
+        if ((_simulationMode == SimulationMode.discharging ||
+            _simulationMode == SimulationMode.both)) {
+          double dischargingVoltage;
+          if (tau == 0.0) {
+            // Descarga instantánea (cortocircuito)
+            dischargingVoltage = 0.0;
+          } else if (tau == double.infinity) {
+            // Nunca descarga (circuito abierto)
+            dischargingVoltage = _initialDischargeVoltage;
+          } else {
+            dischargingVoltage =
+                _initialDischargeVoltage * math.exp(-_currentTime / tau);
+          }
+
+          // Asegurarse de que no se añadan más puntos de los necesarios
+          if (_dischargingData.length < _maxDataPoints) {
+            _dischargingData.add(FlSpot(_currentTime, dischargingVoltage));
+          }
+        }
+
+        // Condición de parada del temporizador
+        bool stopSimulation = false;
+        if (_currentTime >= maxTime) {
+          stopSimulation = true;
+        } else if ((_simulationMode == SimulationMode.charging ||
+                _simulationMode == SimulationMode.both) &&
+            _chargingData.length >= _maxDataPoints) {
+          stopSimulation = true;
+        } else if ((_simulationMode == SimulationMode.discharging ||
+                _simulationMode == SimulationMode.both) &&
+            _dischargingData.length >= _maxDataPoints) {
+          stopSimulation = true;
+        }
+
+        if (stopSimulation) {
+          _simulationTimer?.cancel();
+        }
+      });
+    });
+  }
+
+  void _resetSimulation() {
+    _simulationTimer?.cancel();
+    setState(() {
+      _chargingData.clear();
+      _dischargingData.clear();
+      _currentTime = 0.0;
+      // Puedes resetear los valores de los controladores a los valores por defecto si lo deseas
+      // _resistanceController.text = '1.0';
+      // _capacitanceController.text = '1.0';
+      // _voltageController.text = '5.0';
+      // _initialDischargeVoltageController.text = '5.0';
+      // _selectedResistancePrefix = UnitPrefix.resistancePrefixes[1];
+      // _selectedCapacitancePrefix = UnitPrefix.capacitancePrefixes[2];
+      // _simulationMode = SimulationMode.charging;
+      // _selectedResistorFault = ResistorFault.normal;
+      // _selectedCapacitorFault = CapacitorFault.normal;
+      // _calculateRCConstant();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Determinar el valor máximo para el eje Y de la gráfica
-    double graphMaxY = 0;
-    if (_simulationMode == SimulationMode.charging ||
-        _simulationMode == SimulationMode.both) {
-      graphMaxY = math.max(graphMaxY, _voltage);
-    }
-    if (_simulationMode == SimulationMode.discharging ||
-        _simulationMode == SimulationMode.both) {
-      graphMaxY = math.max(graphMaxY, _initialDischargeVoltage);
-    }
-    graphMaxY = (graphMaxY > 0)
-        ? graphMaxY * 1.1
-        : 5.0; // Asegura un rango visible si los voltajes son 0
-
-    // Ajustar maxX para casos de tau infinito o cero
-    double displayMaxX;
-    if (_tau.isInfinite) {
-      displayMaxX =
-          5.0; // Por ejemplo, 5 segundos para ver que la línea es plana
-    } else if (_tau == 0.0) {
-      displayMaxX = 0.5; // Un rango corto para mostrar el salto instantáneo
-    } else {
-      displayMaxX = _tau * 5;
-    }
-    // Asegurarse de que displayMaxX sea al menos un valor positivo para evitar errores del gráfico
-    if (displayMaxX <= 0) displayMaxX = 1.0;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Simulador Circuito RC'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: colorScheme.primaryContainer,
+        foregroundColor: colorScheme.onPrimaryContainer,
         centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            const Text(
-              'Simulador de Carga y Descarga de un Capacitor en un Circuito RC.',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+          children: [
+            Text(
+              'Constante de Tiempo RC (Tau): ${tau.isFinite ? UnitUtils.formatValue(tau, UnitType.time) : (tau == double.infinity ? '∞' : 'Error')}',
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-
             _buildInputRow(
-              'Resistencia (R)',
-              _resistanceController,
-              'Ω',
+              context,
+              controller: _resistanceController,
+              focusNode: _resistanceFocusNode,
+              labelText: 'Resistencia (R)',
+              baseUnitSymbol: 'Ω',
               prefixes: UnitPrefix.resistancePrefixes,
               selectedPrefix: _selectedResistancePrefix,
-              onPrefixChanged: (newValue) {
-                setState(() {
-                  _selectedResistancePrefix = newValue!;
-                  _onInputChanged();
-                });
+              onPrefixChanged: (UnitPrefix? newPrefix) {
+                if (newPrefix != null) {
+                  setState(() {
+                    _selectedResistancePrefix = newPrefix;
+                    _validateResistance(); // Re-validar al cambiar el prefijo
+                  });
+                }
               },
-              onTextChanged: _onInputChanged,
               errorText: _resistanceErrorText,
               faultDropdown: DropdownButton<ResistorFault>(
                 value: _selectedResistorFault,
                 onChanged: (ResistorFault? newValue) {
-                  setState(() {
-                    _selectedResistorFault = newValue!;
-                    _onInputChanged();
-                  });
+                  if (newValue != null) {
+                    setState(() {
+                      _selectedResistorFault = newValue;
+                      _calculateRCConstant();
+                    });
+                  }
                 },
-                items: const [
-                  DropdownMenuItem(
-                    value: ResistorFault.normal,
-                    child: Text('Normal'),
-                  ),
-                  DropdownMenuItem(
-                    value: ResistorFault.open,
-                    child: Text('Abierto'),
-                  ),
-                  DropdownMenuItem(
-                    value: ResistorFault.short,
-                    child: Text('Corto'),
-                  ),
-                ],
+                items: ResistorFault.values.map((ResistorFault fault) {
+                  return DropdownMenuItem<ResistorFault>(
+                    value: fault,
+                    child: Text(
+                      fault.name == 'normal'
+                          ? 'Normal'
+                          : (fault.name == 'open' ? 'Abierto' : 'Corto'),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
             const SizedBox(height: 16),
             _buildInputRow(
-              'Capacitancia (C)',
-              _capacitanceController,
-              'F',
+              context,
+              controller: _capacitanceController,
+              focusNode: _capacitanceFocusNode,
+              labelText: 'Capacitancia (C)',
+              baseUnitSymbol: 'F',
               prefixes: UnitPrefix.capacitancePrefixes,
               selectedPrefix: _selectedCapacitancePrefix,
-              onPrefixChanged: (newValue) {
-                setState(() {
-                  _selectedCapacitancePrefix = newValue!;
-                  _onInputChanged();
-                });
+              onPrefixChanged: (UnitPrefix? newPrefix) {
+                if (newPrefix != null) {
+                  setState(() {
+                    _selectedCapacitancePrefix = newPrefix;
+                    _validateCapacitance(); // Re-validar al cambiar el prefijo
+                  });
+                }
               },
-              onTextChanged: _onInputChanged,
               errorText: _capacitanceErrorText,
               faultDropdown: DropdownButton<CapacitorFault>(
                 value: _selectedCapacitorFault,
                 onChanged: (CapacitorFault? newValue) {
-                  setState(() {
-                    _selectedCapacitorFault = newValue!;
-                    _onInputChanged();
-                  });
+                  if (newValue != null) {
+                    setState(() {
+                      _selectedCapacitorFault = newValue;
+                      _calculateRCConstant();
+                    });
+                  }
                 },
-                items: const [
-                  DropdownMenuItem(
-                    value: CapacitorFault.normal,
-                    child: Text('Normal'),
-                  ),
-                  DropdownMenuItem(
-                    value: CapacitorFault.open,
-                    child: Text('Abierto'),
-                  ),
-                  DropdownMenuItem(
-                    value: CapacitorFault.short,
-                    child: Text('Corto'),
-                  ),
-                ],
+                items: CapacitorFault.values.map((CapacitorFault fault) {
+                  return DropdownMenuItem<CapacitorFault>(
+                    value: fault,
+                    child: Text(
+                      fault.name == 'normal'
+                          ? 'Normal'
+                          : (fault.name == 'open' ? 'Abierto' : 'Corto'),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
             const SizedBox(height: 16),
             _buildInputRow(
-              'Voltaje de Fuente (V)',
-              _voltageController,
-              'V',
-              onTextChanged: _onInputChanged,
+              context,
+              controller: _voltageController,
+              focusNode: _voltageFocusNode,
+              labelText: 'Voltaje Fuente (V)',
+              baseUnitSymbol: 'V',
               errorText: _voltageErrorText,
             ),
-            const SizedBox(height: 24),
-
-            Container(
-              padding: const EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Modo de Simulación:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Expanded(
-                        child: RadioListTile<SimulationMode>(
-                          title: const Text('Carga'),
-                          value: SimulationMode.charging,
-                          groupValue: _simulationMode,
-                          onChanged: (SimulationMode? value) {
-                            setState(() {
-                              _simulationMode = value!;
-                              // Si es carga, el voltaje inicial de descarga se iguala al de la fuente por coherencia visual al cambiar de modo
-                              _initialDischargeVoltageController.text = _voltage
-                                  .toStringAsFixed(0);
-                              _validateInputs();
-                            });
-                          },
-                        ),
-                      ),
-                      Expanded(
-                        child: RadioListTile<SimulationMode>(
-                          title: const Text('Descarga'),
-                          value: SimulationMode.discharging,
-                          groupValue: _simulationMode,
-                          onChanged: (SimulationMode? value) {
-                            setState(() {
-                              _simulationMode = value!;
-                              _initialDischargeVoltageController.text = _voltage
-                                  .toStringAsFixed(0);
-                              _validateInputs();
-                            });
-                          },
-                        ),
-                      ),
-                      Expanded(
-                        child: RadioListTile<SimulationMode>(
-                          title: const Text('Ambos'),
-                          value: SimulationMode.both,
-                          groupValue: _simulationMode,
-                          onChanged: (SimulationMode? value) {
-                            setState(() {
-                              _simulationMode = value!;
-                              _initialDischargeVoltageController.text = _voltage
-                                  .toStringAsFixed(0);
-                              _validateInputs();
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 16),
-
-            Opacity(
-              opacity:
-                  (_simulationMode == SimulationMode.discharging ||
-                      _simulationMode == SimulationMode.both)
-                  ? 1.0
-                  : 0.4,
-              child: IgnorePointer(
-                ignoring:
-                    !(_simulationMode == SimulationMode.discharging ||
-                        _simulationMode == SimulationMode.both),
-                child: _buildInputRow(
-                  'Voltaje Inicial de Descarga (Vo)',
-                  _initialDischargeVoltageController,
-                  'V',
-                  onTextChanged: _onInputChanged,
-                  errorText: _initialDischargeVoltageErrorText,
-                ),
-              ),
+            _buildInputRow(
+              context,
+              controller: _initialDischargeVoltageController,
+              focusNode: _initialDischargeVoltageFocusNode,
+              labelText: 'Voltaje Inicial Descarga (Vo)',
+              baseUnitSymbol: 'V',
+              errorText: _initialDischargeVoltageErrorText,
             ),
             const SizedBox(height: 24),
-
-            ElevatedButton(
-              onPressed: () {
-                _debounceTimer?.cancel();
-                _validateInputs();
-              },
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Text('Modo de Simulación:', style: textTheme.titleMedium),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Expanded(
+                  child: RadioListTile<SimulationMode>(
+                    title: const Text('Carga'),
+                    value: SimulationMode.charging,
+                    groupValue: _simulationMode,
+                    onChanged: (value) {
+                      setState(() {
+                        _simulationMode = value!;
+                      });
+                    },
+                  ),
                 ),
-              ),
-              child: const Text(
-                'Simular y Graficar (Manual)',
-                style: TextStyle(fontSize: 18),
-              ),
+                Expanded(
+                  child: RadioListTile<SimulationMode>(
+                    title: const Text('Descarga'),
+                    value: SimulationMode.discharging,
+                    groupValue: _simulationMode,
+                    onChanged: (value) {
+                      setState(() {
+                        _simulationMode = value!;
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<SimulationMode>(
+                    title: const Text('Ambos'),
+                    value: SimulationMode.both,
+                    groupValue: _simulationMode,
+                    onChanged: (value) {
+                      setState(() {
+                        _simulationMode = value!;
+                      });
+                    },
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-
-            // Mostrar "∞" si _tau es infinito, "0" si es cero, o el valor calculado
-            Text(
-              'Constante de Tiempo (τ): ${_tau.isInfinite ? "∞" : (_tau == 0.0 ? "0" : _tau.toStringAsFixed(3))} segundos',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _startSimulation,
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Iniciar Simulación'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _resetSimulation,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Reiniciar'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-
+            const SizedBox(height: 24),
             AspectRatio(
               aspectRatio: 1.5,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 0, end: displayMaxX),
-                duration: const Duration(milliseconds: 700),
-                curve: Curves.easeOutCubic,
-                builder: (context, animatedMaxX, child) {
-                  // Ajuste para limpiar la gráfica si hay errores de entrada
-                  bool hasInputError =
-                      _resistanceErrorText != null ||
-                      _capacitanceErrorText != null ||
-                      _voltageErrorText != null ||
-                      (_initialDischargeVoltageErrorText != null &&
-                          (_simulationMode == SimulationMode.discharging ||
-                              _simulationMode == SimulationMode.both));
-
-                  List<FlSpot> currentChargingData = hasInputError
-                      ? []
-                      : _chargingData
-                            .where((spot) => spot.x <= animatedMaxX)
-                            .toList();
-                  List<FlSpot> currentDischargingData = hasInputError
-                      ? []
-                      : _dischargingData
-                            .where((spot) => spot.x <= animatedMaxX)
-                            .toList();
-
-                  return LineChart(
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                color: colorScheme.surfaceContainerHighest,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: LineChart(
                     LineChartData(
-                      gridData: const FlGridData(show: true),
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: true,
+                        horizontalInterval: _voltage > 0
+                            ? (_voltage / 4)
+                            : 1, // Intervalo dinámico para el voltaje
+                        verticalInterval: tau.isFinite && tau > 0
+                            ? (tau / 2)
+                            : 1, // Intervalo dinámico para tau
+                        getDrawingHorizontalLine: (value) {
+                          return FlLine(
+                            color: colorScheme.onSurface.withAlpha(
+                              (0.3 * 255).round(),
+                            ), // Usar withAlpha
+                            strokeWidth: 0.5,
+                          );
+                        },
+                        getDrawingVerticalLine: (value) {
+                          return FlLine(
+                            color: colorScheme.onSurface.withAlpha(
+                              (0.3 * 255).round(),
+                            ), // Usar withAlpha
+                            strokeWidth: 0.5,
+                          );
+                        },
+                      ),
                       titlesData: FlTitlesData(
+                        show: true,
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            getTitlesWidget: (value, meta) =>
-                                Text('${value.toStringAsFixed(1)}s'),
                             reservedSize: 30,
+                            interval: tau.isFinite && tau > 0
+                                ? (tau / 2)
+                                : 1, // Intervalo dinámico para el tiempo
+                            getTitlesWidget: (value, meta) {
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                space: 8.0,
+                                child: Text(
+                                  value.toStringAsFixed(tau > 1 ? 1 : 2),
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            getTitlesWidget: (value, meta) =>
-                                Text('${value.toStringAsFixed(1)}V'),
                             reservedSize: 40,
+                            interval: _voltage > 0
+                                ? (_voltage / 4)
+                                : 1, // Intervalo dinámico para el voltaje
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                value.toStringAsFixed(1),
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                textAlign: TextAlign.left,
+                              );
+                            },
                           ),
-                        ),
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
                         ),
                       ),
                       borderData: FlBorderData(
                         show: true,
                         border: Border.all(
-                          color: const Color(0xff37434d),
+                          color: colorScheme.outlineVariant,
                           width: 1,
                         ),
                       ),
                       minX: 0,
-                      maxX: displayMaxX,
+                      maxX: tau.isFinite && tau > 0
+                          ? tau * 5.5
+                          : (_currentTime == 0 ? 1 : _currentTime * 1.1),
                       minY: 0,
-                      maxY: graphMaxY,
+                      maxY:
+                          _voltage *
+                          1.1, // Un poco más del voltaje de la fuente
                       lineBarsData: [
                         if (_simulationMode == SimulationMode.charging ||
                             _simulationMode == SimulationMode.both)
                           LineChartBarData(
-                            spots: currentChargingData,
+                            spots: _chargingData,
                             isCurved: true,
-                            color: Colors.blue,
+                            color: Colors.blueAccent,
                             barWidth: 3,
                             isStrokeCapRound: true,
                             dotData: const FlDotData(show: false),
@@ -596,66 +689,19 @@ class _RCCircuitSimulatorScreenState extends State<RCCircuitSimulatorScreen> {
                         if (_simulationMode == SimulationMode.discharging ||
                             _simulationMode == SimulationMode.both)
                           LineChartBarData(
-                            spots: currentDischargingData,
+                            spots: _dischargingData,
                             isCurved: true,
-                            color: Colors.red,
+                            color: Colors.redAccent,
                             barWidth: 3,
                             isStrokeCapRound: true,
                             dotData: const FlDotData(show: false),
                             belowBarData: BarAreaData(show: false),
                           ),
                       ],
-                      extraLinesData: ExtraLinesData(
-                        verticalLines: [
-                          // Solo muestra la línea Tau si el cálculo es válido y tau es finito y positivo
-                          if (_tau > 0 && _tau.isFinite && !hasInputError)
-                            VerticalLine(
-                              x: _tau,
-                              color: Colors.grey,
-                              strokeWidth: 1,
-                              dashArray: [5, 5],
-                              label: VerticalLineLabel(
-                                show: true,
-                                alignment: Alignment.topRight,
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 10,
-                                ),
-                                labelResolver: (line) =>
-                                    'τ (${_tau.toStringAsFixed(2)}s)',
-                              ),
-                            ),
-                        ],
-                      ),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_simulationMode == SimulationMode.charging ||
-                    _simulationMode == SimulationMode.both)
-                  Row(
-                    children: [
-                      Container(width: 15, height: 3, color: Colors.blue),
-                      const SizedBox(width: 5),
-                      const Text('Carga'),
-                      const SizedBox(width: 15),
-                    ],
-                  ),
-                if (_simulationMode == SimulationMode.discharging ||
-                    _simulationMode == SimulationMode.both)
-                  Row(
-                    children: [
-                      Container(width: 15, height: 3, color: Colors.red),
-                      const SizedBox(width: 5),
-                      const Text('Descarga'),
-                    ],
-                  ),
-              ],
             ),
           ],
         ),
@@ -663,106 +709,84 @@ class _RCCircuitSimulatorScreenState extends State<RCCircuitSimulatorScreen> {
     );
   }
 
+  // Widget auxiliar para las filas de entrada con prefijos y errores
   Widget _buildInputRow(
-    String label,
-    TextEditingController controller,
-    String baseUnitSymbol, {
-    List<UnitPrefix>? prefixes,
-    UnitPrefix? selectedPrefix,
-    ValueChanged<UnitPrefix?>? onPrefixChanged,
-    VoidCallback? onTextChanged,
+    BuildContext context, {
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required String labelText,
+    required String baseUnitSymbol,
+    List<UnitPrefix>? prefixes, // Lista opcional de prefijos
+    UnitPrefix? selectedPrefix, // Prefijo seleccionado (si aplica)
+    ValueChanged<UnitPrefix?>?
+    onPrefixChanged, // Callback para cambio de prefijo
     String? errorText,
-    Widget? faultDropdown,
+    Widget? faultDropdown, // Dropdown opcional para fallos
   }) {
-    // Determinar si el campo de texto debe estar habilitado
-    bool isEnabled = true;
-    if (label.contains('Resistencia') &&
-        _selectedResistorFault != ResistorFault.normal) {
-      isEnabled = false;
-    } else if (label.contains('Capacitancia') &&
-        _selectedCapacitorFault != CapacitorFault.normal) {
-      isEnabled = false;
-    }
+    // Eliminada la declaración de colorScheme no utilizada
+    //
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          flex: 3,
-          child: Opacity(
-            opacity: isEnabled ? 1.0 : 0.4,
-            child: IgnorePointer(
-              ignoring: !isEnabled,
-              child: TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: label,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  errorText: errorText,
-                ),
-                onChanged: (text) => onTextChanged?.call(),
-              ),
-            ),
+        TextField(
+          controller: controller,
+          focusNode: focusNode,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: labelText,
+            border: const OutlineInputBorder(),
+            suffixIcon: prefixes != null && prefixes.isNotEmpty
+                ? Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<UnitPrefix>(
+                        value: selectedPrefix,
+                        onChanged: onPrefixChanged,
+                        items: prefixes.map((UnitPrefix prefix) {
+                          return DropdownMenuItem<UnitPrefix>(
+                            value: prefix,
+                            child: Text(
+                              prefix.symbol.isEmpty
+                                  ? baseUnitSymbol
+                                  : '${prefix.symbol}$baseUnitSymbol',
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  )
+                : (baseUnitSymbol.isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(right: 12.0),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            widthFactor: 1.0,
+                            child: Text(
+                              baseUnitSymbol,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        )
+                      : null),
+            errorText: errorText,
           ),
         ),
-        const SizedBox(width: 10),
-        if (prefixes != null &&
-            selectedPrefix != null &&
-            onPrefixChanged != null)
-          Expanded(
-            flex: 2,
-            child: Row(
-              children: [
-                Container(
-                  width: 100,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<UnitPrefix>(
-                      value: selectedPrefix,
-                      onChanged: onPrefixChanged,
-                      items: prefixes.map((UnitPrefix prefix) {
-                        return DropdownMenuItem<UnitPrefix>(
-                          value: prefix,
-                          child: Text(
-                            prefix.symbol.isEmpty
-                                ? baseUnitSymbol
-                                : '${prefix.symbol}$baseUnitSymbol',
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-                if (faultDropdown != null) ...[
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: DropdownButtonHideUnderline(child: faultDropdown),
-                    ),
-                  ),
-                ],
-              ],
+        if (faultDropdown != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8.0),
             ),
-          )
-        else // Para el campo de voltaje que no tiene prefijos ni dropdown de fallo
-          SizedBox(
-            width: 50,
-            child: Text(
-              baseUnitSymbol,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            child: DropdownButtonHideUnderline(child: faultDropdown),
           ),
+        ],
+        const SizedBox(height: 8), // Espacio para el error o entre elementos
       ],
     );
   }

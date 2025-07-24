@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:calculadora_electronica/widgets/input_row_widget.dart'; // Importa el nuevo widget
 
 class OhmLawScreen extends StatefulWidget {
   const OhmLawScreen({super.key});
@@ -262,67 +263,6 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
     });
   }
 
-  // Reusable widget for each input row
-  Widget _buildInputRow({
-    required IconData icon,
-    required String labelText,
-    required TextEditingController controller,
-    required String selectedUnit,
-    required List<String> units,
-    required ValueChanged<String?> onUnitChanged,
-    // Removed: required ValueChanged<String> onChanged, // No longer needed for dynamic calculation
-  }) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            Icon(icon, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: labelText,
-                  border: InputBorder.none, // Remove default border
-                  isDense: true,
-                ),
-                // Removed: onChanged: onChanged, // No longer trigger calculation on text change
-              ),
-            ),
-            SizedBox(
-              width: 80, // Fixed width for dropdown
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedUnit,
-                  onChanged: (String? newValue) {
-                    onUnitChanged(newValue);
-                    // The main calculation is now only triggered by the button,
-                    // but changing units might still clear outputs if not re-calculated
-                    // so we keep this call for immediate unit-based display refresh
-                    // for the currently entered values.
-                    _calculateOhmLaw();
-                  },
-                  items: units.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  isExpanded: true,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -336,7 +276,8 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            _buildInputRow(
+            // Usamos el nuevo widget InputRowWidget
+            InputRowWidget(
               icon: Icons.power_outlined, // Icon for Voltage
               labelText: 'Voltaje',
               controller: _voltageController,
@@ -346,10 +287,10 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
                 setState(() {
                   _selectedVoltageUnit = newValue!;
                 });
+                _calculateOhmLaw(); // Recalculate if unit changes
               },
-              // Removed: onChanged: (_) => _calculateOhmLaw(),
             ),
-            _buildInputRow(
+            InputRowWidget(
               icon: Icons.electrical_services_outlined, // Icon for Current
               labelText: 'Corriente',
               controller: _currentController,
@@ -359,10 +300,10 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
                 setState(() {
                   _selectedCurrentUnit = newValue!;
                 });
+                _calculateOhmLaw(); // Recalculate if unit changes
               },
-              // Removed: onChanged: (_) => _calculateOhmLaw(),
             ),
-            _buildInputRow(
+            InputRowWidget(
               icon:
                   Icons.clear_all, // Icon for Resistance (looks like a zig-zag)
               labelText: 'Resistencia',
@@ -373,10 +314,10 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
                 setState(() {
                   _selectedResistanceUnit = newValue!;
                 });
+                _calculateOhmLaw(); // Recalculate if unit changes
               },
-              // Removed: onChanged: (_) => _calculateOhmLaw(),
             ),
-            _buildInputRow(
+            InputRowWidget(
               icon: Icons.speed, // Icon for Power
               labelText: 'Potencia',
               controller: _powerController,
@@ -386,12 +327,12 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
                 setState(() {
                   _selectedPowerUnit = newValue!;
                 });
+                _calculateOhmLaw(); // Recalculate if unit changes
               },
-              // Removed: onChanged: (_) => _calculateOhmLaw(),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _calculateOhmLaw, // Calculation now only happens here
+              onPressed: _calculateOhmLaw,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(

@@ -14,7 +14,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.2.0 # Agregado para persistencia del tema
   url_launcher: ^6.1.10
-  speech_to_text: ^6.3.0
+  #speech_to_text:
   fl_chart: ^0.68.0
 
 dev_dependencies:
