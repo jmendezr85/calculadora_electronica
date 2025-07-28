@@ -1,6 +1,6 @@
 // lib/utils/unit_utils.dart
 
-/// Representa un prefijo de unidad electrónica (mili, micro, kilo, etc.).
+/// Representa un prefijo de unidad electrónica (mili, micro, kilo, etc.)
 class UnitPrefix {
   final String name;
   final String symbol;
@@ -28,7 +28,6 @@ class UnitPrefix {
     UnitPrefix('Kilo', 'k', 1e3),
     UnitPrefix('Mega', 'M', 1e6),
     UnitPrefix('Giga', 'G', 1e9),
-    UnitPrefix('Tera', 'T', 1e12),
   ];
 
   // Prefijos comunes para capacitancia
@@ -36,12 +35,33 @@ class UnitPrefix {
     UnitPrefix('Pico', 'p', 1e-12),
     UnitPrefix('Nano', 'n', 1e-9),
     UnitPrefix('Micro', 'µ', 1e-6),
-    UnitPrefix(
-      'Mili',
-      'm',
-      1e-3,
-    ), // Aunque menos común para capacitancia, se incluye
+    UnitPrefix('Mili', 'm', 1e-3),
     UnitPrefix('Ninguno', '', 1.0),
+  ];
+
+  // Prefijos comunes para voltaje
+  static const List<UnitPrefix> voltagePrefixes = [
+    UnitPrefix('Mili', 'm', 1e-3),
+    UnitPrefix('Ninguno', '', 1.0),
+    UnitPrefix('Kilo', 'k', 1e3),
+  ];
+
+  // Prefijos comunes para tiempo
+  static const List<UnitPrefix> timePrefixes = [
+    UnitPrefix('Pico', 'p', 1e-12),
+    UnitPrefix('Nano', 'n', 1e-9),
+    UnitPrefix('Micro', 'µ', 1e-6),
+    UnitPrefix('Mili', 'm', 1e-3),
+    UnitPrefix('Ninguno', '', 1.0),
+    UnitPrefix('Kilo', 'k', 1e3),
+  ];
+
+  // Prefijos comunes para frecuencia
+  static const List<UnitPrefix> frequencyPrefixes = [
+    UnitPrefix('Ninguno', '', 1.0),
+    UnitPrefix('Kilo', 'k', 1e3),
+    UnitPrefix('Mega', 'M', 1e6),
+    UnitPrefix('Giga', 'G', 1e9),
   ];
 
   // Prefijos comunes para inductancia
@@ -51,126 +71,121 @@ class UnitPrefix {
     UnitPrefix('Mili', 'm', 1e-3),
     UnitPrefix('Ninguno', '', 1.0),
   ];
-  static const UnitPrefix none = UnitPrefix('Ninguno', '', 1.0);
-  // Prefijos comunes para voltaje y corriente, frecuencia, tiempo
-  static const List<UnitPrefix> voltageCurrentPrefixes = [
-    UnitPrefix(
-      'Pico',
-      'p',
-      1e-12,
-    ), // Añadido para mayor granularidad, ej. para frecuencia alta o tiempo muy corto
-    UnitPrefix('Nano', 'n', 1e-9),
-    UnitPrefix('Micro', 'µ', 1e-6),
-    UnitPrefix('Mili', 'm', 1e-3),
-    UnitPrefix('Ninguno', '', 1.0),
-    UnitPrefix('Kilo', 'k', 1e3),
-    UnitPrefix('Mega', 'M', 1e6),
-    UnitPrefix('Giga', 'G', 1e9),
-  ];
 }
 
-/// Enumeración para categorizar diferentes tipos de unidades.
-/// Esto ayuda a seleccionar los prefijos adecuados para el formateo.
-enum UnitType {
+/// Categorías de unidades para facilitar la gestión
+enum UnitCategory {
   resistance,
   capacitance,
   inductance,
   voltage,
   current,
-  frequency,
   power,
-  time, // Añadido para el simulador RC
-  // Puedes añadir más tipos de unidades según sea necesario
+  frequency,
+  time,
+  temperature,
+  charge,
 }
 
-/// Una clase de utilidad para formatear valores numéricos con los prefijos de unidad adecuados.
+/// Clase de utilidad para manejar la conversión y el formato de unidades
 class UnitUtils {
-  /// Formatea un valor numérico a una cadena con el prefijo de unidad más apropiado.
-  ///
-  /// [value]: El valor numérico a formatear.
-  /// [type]: El tipo de unidad para determinar los prefijos aplicables.
-  /// [decimalPlaces]: El número de decimales a redondear. Por defecto es 2.
-  static String formatValue(
+  static double convertToBase(
     double value,
-    UnitType type, {
-    int decimalPlaces = 2,
-  }) {
-    List<UnitPrefix> prefixes;
+    String unitWithPrefix,
+    UnitCategory category,
+  ) {
+    if (value == 0) return 0;
 
-    switch (type) {
-      case UnitType.resistance:
-        prefixes = [...UnitPrefix.resistancePrefixes]; // <--- ¡Copia mutable!
-        break;
-      case UnitType.capacitance:
-        prefixes = [...UnitPrefix.capacitancePrefixes]; // <--- ¡Copia mutable!
-        break;
-      case UnitType.inductance:
-        prefixes = [...UnitPrefix.inductancePrefixes]; // <--- ¡Copia mutable!
-        break;
-      case UnitType.voltage:
-      case UnitType.current:
-      case UnitType.power:
-      case UnitType.frequency:
-      case UnitType.time:
-        prefixes = [
-          ...UnitPrefix.voltageCurrentPrefixes,
-        ]; // <--- ¡Copia mutable!
-        break;
-      // Añade más casos si tienes listas de prefijos específicas para otros UnitType
+    String prefixSymbol = '';
+
+    if (unitWithPrefix.length > 1) {
+      prefixSymbol = unitWithPrefix[0];
     }
 
-    // Ordenar los prefijos de menor a mayor multiplicador
-    prefixes.sort((a, b) => a.multiplier.compareTo(b.multiplier));
+    UnitPrefix? prefix;
+    for (var p in UnitPrefix.all) {
+      if (p.symbol == prefixSymbol) {
+        prefix = p;
+        break;
+      }
+    }
 
-    UnitPrefix selectedPrefix = prefixes.firstWhere(
-      (prefix) => prefix.multiplier == 1.0,
-      orElse: () => const UnitPrefix('Ninguno', '', 1.0),
-    );
+    prefix ??= const UnitPrefix('Ninguno', '', 1.0);
+    return value * prefix.multiplier;
+  }
 
+  static String formatResult(double value, UnitCategory category) {
+    List<UnitPrefix> prefixes = [];
+
+    switch (category) {
+      case UnitCategory.resistance:
+        prefixes = UnitPrefix.resistancePrefixes;
+        break;
+      case UnitCategory.capacitance:
+        prefixes = UnitPrefix.capacitancePrefixes;
+        break;
+      case UnitCategory.voltage:
+        prefixes = UnitPrefix.voltagePrefixes;
+        break;
+      case UnitCategory.time:
+        prefixes = UnitPrefix.timePrefixes;
+        break;
+      case UnitCategory.frequency:
+        prefixes = UnitPrefix.frequencyPrefixes;
+        break;
+      case UnitCategory.inductance:
+        prefixes = UnitPrefix.inductancePrefixes;
+        break;
+      default:
+        prefixes = UnitPrefix.all;
+    }
+
+    return _formatValueWithPrefixes(value, prefixes);
+  }
+
+  static String _formatValueWithPrefixes(
+    double value,
+    List<UnitPrefix> prefixes,
+  ) {
+    if (value == 0) return '0';
+
+    UnitPrefix selectedPrefix = const UnitPrefix('Ninguno', '', 1.0);
     double displayValue = value;
 
-    // Buscar el prefijo más adecuado
-    for (int i = 0; i < prefixes.length; i++) {
-      final currentPrefix = prefixes[i];
-      final nextPrefix = (i + 1 < prefixes.length) ? prefixes[i + 1] : null;
+    // Crear una copia mutable de la lista antes de ordenar
+    final sortedPrefixes = prefixes.toList()
+      ..sort((a, b) => a.multiplier.compareTo(b.multiplier));
 
-      // Si el valor es mayor o igual al prefijo actual, y menor que el siguiente (si existe)
-      // o si es el último prefijo, seleccionamos este.
+    for (var i = 0; i < sortedPrefixes.length; i++) {
+      final currentPrefix = sortedPrefixes[i];
+      bool isLastPrefix = i == sortedPrefixes.length - 1;
       if (value.abs() >= currentPrefix.multiplier &&
-          (nextPrefix == null || value.abs() < nextPrefix.multiplier)) {
+          (isLastPrefix || value.abs() < sortedPrefixes[i + 1].multiplier)) {
         selectedPrefix = currentPrefix;
         displayValue = value / currentPrefix.multiplier;
         break;
       }
     }
 
-    // Caso especial para valores muy pequeños o muy grandes que no encajan perfectamente
-    // con los rangos definidos por los prefijos en el bucle anterior.
-    // Asegura que el valor se muestre con el prefijo más bajo o más alto si está fuera de los rangos intermedios.
     if (value.abs() > 0 &&
         selectedPrefix.multiplier == 1.0 &&
-        prefixes.isNotEmpty) {
-      // Si el valor es muy pequeño y no se seleccionó un prefijo más adecuado que "Ninguno"
-      final smallestPrefix = prefixes.first;
+        sortedPrefixes.isNotEmpty) {
+      final smallestPrefix = sortedPrefixes.first;
       if (value.abs() < smallestPrefix.multiplier) {
         selectedPrefix = smallestPrefix;
         displayValue = value / smallestPrefix.multiplier;
+      } else {
+        final largestPrefix = sortedPrefixes.last;
+        if (value.abs() > largestPrefix.multiplier) {
+          selectedPrefix = largestPrefix;
+          displayValue = value / largestPrefix.multiplier;
+        }
       }
     }
 
-    // Si después del bucle y el caso especial, el valor sigue siendo el original y no 0,
-    // significa que es un valor muy grande que supera nuestro prefijo más grande.
-    // En este caso, lo mostramos con el prefijo más grande disponible.
-    if (value.abs() > 0 &&
-        selectedPrefix.multiplier == 1.0 &&
-        prefixes.isNotEmpty) {
-      final largestPrefix = prefixes.last;
-      if (value.abs() > largestPrefix.multiplier) {
-        selectedPrefix = largestPrefix;
-        displayValue = value / largestPrefix.multiplier;
-      }
-    }
+    String formattedValue = displayValue.toStringAsFixed(3);
+    formattedValue = formattedValue.replaceAll(RegExp(r'\.?0*$'), '');
 
-    return '${displayValue.toStringAsFixed(decimalPlaces)} ${selectedPrefix.symbol}';
+    return '$formattedValue${selectedPrefix.symbol}';
   }
 }

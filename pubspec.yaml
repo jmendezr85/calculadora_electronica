@@ -1,26 +1,35 @@
 name: calculadora_electronica
-description: "A new Flutter project."
+description: "Calculadora electrónica con múltiples herramientas para diseño de circuitos"
 
 publish_to: "none"
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.8.1
+  sdk: ">=3.8.1 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  shared_preferences: ^2.2.0 # Agregado para persistencia del tema
+  shared_preferences: ^2.2.0
   url_launcher: ^6.1.10
-  #speech_to_text:
   fl_chart: ^0.68.0
+  intl: ^0.19.0
+  math_expressions: ^2.5.0
+  path_provider: ^2.1.1
+  vector_math: ^2.1.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/regulators/linear/lm317_circuit.png"
