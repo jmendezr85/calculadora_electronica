@@ -13,10 +13,10 @@ void main() {
       SharedPreferences.setMockInitialValues({});
 
       // 2. Construir la aplicación.
-      //    Como MyApp ahora requiere 'prefs', la obtenemos de la instancia simulada.
-      //    await SharedPreferences.getInstance() devolverá la instancia mockeada.
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await tester.pumpWidget(MyApp(prefs: prefs));
+      //    MyApp ya no requiere 'prefs' en su constructor.
+      await tester.pumpWidget(
+        const MyApp(),
+      ); // <--- ¡CAMBIO AQUÍ! Eliminado 'prefs: prefs'
 
       // Verificar que el display inicial es "0"
       expect(find.text('0'), findsOneWidget);
@@ -30,8 +30,9 @@ void main() {
       SharedPreferences.setMockInitialValues(
         {},
       ); // Mockear para esta prueba también
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await tester.pumpWidget(MyApp(prefs: prefs));
+      await tester.pumpWidget(
+        const MyApp(),
+      ); // <--- ¡CAMBIO AQUÍ! Eliminado 'prefs: prefs'
 
       // Toca el botón '1'
       await tester.tap(find.text('1'));
@@ -70,8 +71,9 @@ void main() {
       WidgetTester tester,
     ) async {
       SharedPreferences.setMockInitialValues({});
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await tester.pumpWidget(MyApp(prefs: prefs));
+      await tester.pumpWidget(
+        const MyApp(),
+      ); // <--- ¡CAMBIO AQUÍ! Eliminado 'prefs: prefs'
 
       await tester.tap(find.text('1'));
       await tester.tap(find.text('2'));

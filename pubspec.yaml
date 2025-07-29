@@ -19,6 +19,7 @@ dependencies:
   math_expressions: ^2.5.0
   path_provider: ^2.1.1
   vector_math: ^2.1.4
+  provider: ^6.0.5 # <--- ¡IMPORTANTE! Asegúrate de que esté aquí, no en dev_dependencies
 
 dev_dependencies:
   flutter_test:
@@ -29,7 +30,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "assets/images/regulators/linear/lm317_circuit.png"
+  # Para tus assets (imágenes, etc.)
+  assets:
+    - assets/images/regulators/linear/lm317_circuit.png
+    - assets/images/pinouts/ # <--- ¡IMPORTANTE! Para las imágenes de pin-outs

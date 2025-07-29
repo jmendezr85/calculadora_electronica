@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart'; // <--- Importa el paquete 'provider'
 
 // Importa la nueva pantalla principal del dashboard que manejará las pestañas
 import 'package:calculadora_electronica/screens/main_dashboard_screen.dart';
@@ -7,7 +8,14 @@ import 'package:calculadora_electronica/screens/main_dashboard_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final SharedPreferences prefs = await SharedPreferences.getInstance();
-  runApp(MyApp(prefs: prefs));
+  runApp(
+    // <--- ¡IMPORTANTE! Envuelve MyApp con ChangeNotifierProvider
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(prefs: prefs),
+      child:
+          const MyApp(), // MyApp ya no necesita 'prefs' directamente si se usa Provider
+    ),
+  );
 }
 
 class ThemeProvider extends ChangeNotifier {
@@ -36,47 +44,55 @@ class ThemeProvider extends ChangeNotifier {
 }
 
 class MyApp extends StatefulWidget {
-  final SharedPreferences prefs;
+  // final SharedPreferences prefs; // <--- Esta propiedad ya no es necesaria aquí
 
-  const MyApp({super.key, required this.prefs});
+  const MyApp({super.key}); // <--- Constructor sin 'prefs'
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
-  late final ThemeProvider _themeProvider;
+  // ThemeProvider ahora se obtiene del contexto a través de Provider
+  // late final ThemeProvider _themeProvider; // <--- ELIMINA ESTA LÍNEA
 
   @override
   void initState() {
     super.initState();
-    _themeProvider = ThemeProvider(prefs: widget.prefs);
+    // Ya no inicializamos _themeProvider aquí
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _themeProvider,
-      builder: (context, child) {
-        return MaterialApp(
-          title: 'Calculadora Electrónica',
-          debugShowCheckedModeBanner: false,
-          themeMode: _themeProvider.themeMode,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.deepPurple,
-              brightness: Brightness.dark,
-            ),
-            useMaterial3: true,
-          ),
-          // La pantalla de inicio ahora es MainDashboardScreen
-          home: const MainDashboardScreen(),
-        );
-      },
+    // <--- ¡IMPORTANTE! Obtenemos ThemeProvider usando Provider.of
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
+    return MaterialApp(
+      title: 'Calculadora Electrónica',
+      debugShowCheckedModeBanner: false,
+      themeMode: themeProvider.themeMode, // Usa el themeProvider obtenido
+      theme: ThemeData(
+        // Colores para el modo claro
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue, // Usamos azul para un look más "tecnológico"
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        // Colores para el modo oscuro
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue, // Misma semilla, pero con brillo oscuro
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+        // Personalización para el AppBar en modo oscuro
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.grey[900],
+          foregroundColor: Colors.white,
+        ),
+      ),
+      home: const MainDashboardScreen(),
     );
   }
 }
