@@ -2,7 +2,19 @@
 import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/pinouts/pinout_detail_screen.dart';
 import 'package:calculadora_electronica/screens/pinouts/serial_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/parallel_detail_screen.dart'; // Importa la pantalla de detalle
+import 'package:calculadora_electronica/screens/pinouts/parallel_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/ethernet_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/registered_jack_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/scart_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/dvi_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/hdmi_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/displayport_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/vga_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/s_video_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/jack_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/xlr_dmx_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/atx_power_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/eide_ata_sata_detail_screen.dart';
 
 class PinoutsListScreen extends StatelessWidget {
   const PinoutsListScreen({super.key});
@@ -237,6 +249,101 @@ class PinoutsListScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const ParallelDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Puerto Ethernet') {
+                  // <- Nueva condición
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EthernetDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Jack Registrado') {
+                  // <- Nueva condición para Jack Registrado
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RegisteredJackDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conector SCART') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ScartDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conector DVI') {
+                  // ¡NUEVO! Lógica para DVI
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DVIDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conector HDMI') {
+                  // ¡NUEVO! Lógica para HDMI
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HDMIDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Pinout Display Port') {
+                  // ¡NUEVO! Lógica para DisplayPort
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DisplayPortDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conector VGA') {
+                  // ¡NUEVO! Lógica para VGA
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const VGADetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conector S-Video') {
+                  // ¡NUEVO! Lógica para S-Video
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SVideoDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conector Jack') {
+                  // ¡NUEVO! Lógica para Conector Jack
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const JackDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conector XLR y DMX') {
+                  // ¡NUEVO! Lógica para Conector XLR y DMX
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const XlrDmxDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conectores de alimentación ATX') {
+                  // ¡NUEVO! Lógica para Conectores de Alimentación ATX
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AtxPowerDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'EIDE / ATA - SATA') {
+                  // ¡NUEVO! Lógica para Conectores EIDE/ATA y SATA
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EideAtaSataDetailScreen(),
                     ),
                   );
                 } else {
