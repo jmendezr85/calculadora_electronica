@@ -15,6 +15,15 @@ import 'package:calculadora_electronica/screens/pinouts/jack_detail_screen.dart'
 import 'package:calculadora_electronica/screens/pinouts/xlr_dmx_detail_screen.dart';
 import 'package:calculadora_electronica/screens/pinouts/atx_power_detail_screen.dart';
 import 'package:calculadora_electronica/screens/pinouts/eide_ata_sata_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/ps2_at_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/twenty_five_pair_color_code_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/fiber_optic_color_code_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/midi_connector_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/apple_lightning_connector_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/obd_ii_connector_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/iso_connector_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/arduino_uno_board_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/raspberry_pi_board_screen.dart';
 
 class PinoutsListScreen extends StatelessWidget {
   const PinoutsListScreen({super.key});
@@ -188,6 +197,7 @@ class PinoutsListScreen extends StatelessWidget {
             'El Arduino Uno es una popular placa de desarrollo de microcontroladores de código abierto. Este pinout muestra la disposición de sus pines digitales, analógicos, de alimentación y de comunicación, esenciales para el diseño y conexión de proyectos electrónicos.',
         'icon': Icons.developer_board,
       },
+      {'name': 'Pinout de la placa Raspberry Pi', 'icon': Icons.computer},
     ];
 
     final List<Color> iconPalette = [
@@ -344,6 +354,84 @@ class PinoutsListScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const EideAtaSataDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conectores PS/2-AT') {
+                  // ¡NUEVO! Lógica para Conectores PS/2 y AT
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const Ps2AtDetailScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] ==
+                    'Código de colores de cables de 25 pares') {
+                  // ¡NUEVO! Lógica para el código de colores de 25 pares
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const TwentyFivePairColorCodeScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] ==
+                    'Código de colores para cables de fibra óptica') {
+                  // ¡NUEVO! Lógica para el código de colores de fibra óptica
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FiberOpticColorCodeScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conector MIDI') {
+                  // ¡NUEVO! Lógica para el conector MIDI
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MidiConnectorScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Conector Apple Lightning') {
+                  // ¡NUEVO! Lógica para el conector Lightning
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const AppleLightningConnectorScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Pinout Conector de auto OBD-II') {
+                  // ¡NUEVO! Lógica para el conector OBD-II
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ObdIiConnectorScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] ==
+                    'Conector ISO para estereos de automovil.') {
+                  // ¡NUEVO! Lógica para el conector ISO
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const IsoConnectorScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] == 'Arduino Uno board') {
+                  // ¡NUEVO! Lógica para la placa Arduino Uno
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ArduinoUnoBoardScreen(),
+                    ),
+                  );
+                } else if (pinout['name'] ==
+                    'Pinout de la placa Raspberry Pi') {
+                  // ¡NUEVO! Lógica para la placa Raspberry Pi
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RaspberryPiBoardScreen(),
                     ),
                   );
                 } else {

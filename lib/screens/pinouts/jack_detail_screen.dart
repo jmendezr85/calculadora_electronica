@@ -1,5 +1,6 @@
 // lib/screens/pinouts/jack_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
 
 const String _jackTitle = 'Conector Jack (Audio, TRRS, TRS, TS)';
 const String _jackImagePath =
@@ -20,11 +21,8 @@ Color _getColorForSignalType(String type) {
       return Colors.purple.shade200; // Video (obsoleto en jacks)
     case 'ground':
       return Colors.grey.shade600; // Tierra
-    case 'signal (mono)':
-      return Colors.orange.shade400; // Señal (Mono)
-    case 'no conectado':
-    case 'nc':
-      return Colors.grey.shade300; // No conectado
+    case 'control / gnd':
+      return Colors.brown.shade400; // Control o Tierra
     default:
       return Colors.grey.shade100; // Por defecto
   }
@@ -32,77 +30,78 @@ Color _getColorForSignalType(String type) {
 
 const List<Map<String, dynamic>> _jackDetails = [
   {
-    'section_title': 'Tipos de Conectores Jack y sus Pines',
+    'section_title': 'Tipos de Conectores Jack (TS, TRS, TRRS)',
     'description':
-        'Los conectores Jack se diferencian por su diámetro y por el número de "contactos" o "segmentos" que poseen: Tip (Punta), Ring (Anillo/s) y Sleeve (Manga).',
+        'Los conectores Jack se distinguen por el número de "segmentos" o contactos, que determinan el tipo y número de señales que pueden transmitir. Los más comunes son TS, TRS y TRRS:',
     'table_data': [
       {
-        'tipo': 'TS (Tip-Sleeve) - Mono',
-        'pines': '2',
-        'descripcion':
-            'Para audio mono no balanceado, o señales de control/instrumento (ej. guitarras).',
-        'imagen_pinout':
-            'assets/images/pinouts/jack_ts_pinout.png', // Asume imagen específica
+        'tipo': 'TS (Tip-Sleeve)',
+        'contactos': '2',
+        'funcion': 'Audio mono no balanceado, señal de instrumento.',
+        'imagen_pinout': 'assets/images/pinouts/jack_ts_pinout.png',
         'pin_details': [
           {
-            'pin': 'Tip',
-            'funcion': 'Signal (Mono Audio / Positive)',
-            'tipo_senal': 'Signal (Mono)',
-          },
-          {
-            'pin': 'Sleeve',
-            'funcion': 'Ground (Tierra)',
-            'tipo_senal': 'Ground',
-          },
-        ],
-      },
-      {
-        'tipo': 'TRS (Tip-Ring-Sleeve) - Estéreo o Balanceado',
-        'pines': '3',
-        'descripcion':
-            'Para audio estéreo (izquierda, derecha, tierra) o audio mono balanceado.',
-        'imagen_pinout':
-            'assets/images/pinouts/jack_trs_pinout.png', // Asume imagen específica
-        'pin_details': [
-          {
-            'pin': 'Tip',
-            'funcion': 'Left Audio / Positive',
+            'parte': 'Tip',
+            'funcion': 'Señal (Caliente / +)',
             'tipo_senal': 'Left Audio',
           },
           {
-            'pin': 'Ring',
-            'funcion': 'Right Audio / Negative',
-            'tipo_senal': 'Right Audio',
-          },
-          {
-            'pin': 'Sleeve',
-            'funcion': 'Ground (Tierra)',
+            'parte': 'Sleeve',
+            'funcion': 'Tierra / Masa',
             'tipo_senal': 'Ground',
           },
         ],
       },
       {
-        'tipo': 'TRRS (Tip-Ring-Ring-Sleeve) - Estéreo + Mic / Video',
-        'pines': '4',
-        'descripcion':
-            'Para audio estéreo y micrófono, o audio estéreo y video (en dispositivos más antiguos). Existen dos estándares principales.',
-        'imagen_pinout':
-            'assets/images/pinouts/jack_trrs_pinout_generic.png', // Asume imagen genérica para TRRS
+        'tipo': 'TRS (Tip-Ring-Sleeve)',
+        'contactos': '3',
+        'funcion':
+            'Audio estéreo (izquierda/derecha y tierra), audio mono balanceado.',
+        'imagen_pinout': 'assets/images/pinouts/jack_trs_pinout.png',
         'pin_details': [
-          {'pin': 'Tip', 'funcion': 'Left Audio', 'tipo_senal': 'Left Audio'},
           {
-            'pin': 'Ring1',
-            'funcion': 'Right Audio',
+            'parte': 'Tip',
+            'funcion': 'Audio Izquierdo',
+            'tipo_senal': 'Left Audio',
+          },
+          {
+            'parte': 'Ring',
+            'funcion': 'Audio Derecho',
             'tipo_senal': 'Right Audio',
           },
           {
-            'pin': 'Ring2',
-            'funcion': 'Microphone o Video',
-            'tipo_senal': 'Microphone',
-          }, // Se detalla más adelante
+            'parte': 'Sleeve',
+            'funcion': 'Tierra / Masa',
+            'tipo_senal': 'Ground',
+          },
+        ],
+      },
+      {
+        'tipo': 'TRRS (Tip-Ring-Ring-Sleeve)',
+        'contactos': '4',
+        'funcion':
+            'Audio estéreo + micrófono, o audio estéreo + video (obsoleto). Utilizado comúnmente en smartphones.',
+        'imagen_pinout': 'assets/images/pinouts/jack_trrs_pinout_generic.png',
+        'pin_details': [
+          // Se explica la diferencia en la sección de estándares
           {
-            'pin': 'Sleeve',
-            'funcion': 'Ground (Tierra)',
+            'parte': 'Tip',
+            'funcion': 'Audio Izquierdo',
+            'tipo_senal': 'Left Audio',
+          },
+          {
+            'parte': 'Ring1',
+            'funcion': 'Audio Derecho',
+            'tipo_senal': 'Right Audio',
+          },
+          {
+            'parte': 'Ring2',
+            'funcion': 'Micrófono / Tierra (Varía)',
+            'tipo_senal': 'Microphone',
+          },
+          {
+            'parte': 'Sleeve',
+            'funcion': 'Tierra / Micrófono (Varía)',
             'tipo_senal': 'Ground',
           },
         ],
@@ -110,79 +109,65 @@ const List<Map<String, dynamic>> _jackDetails = [
     ],
   },
   {
-    'section_title': 'Estándares TRRS (CTIA vs. OMTP) y Compatibilidad',
+    'section_title': 'Estándares TRRS (CTIA vs. OMTP)',
     'description':
-        'Para los conectores TRRS (4-contactos), la ubicación de los pines del micrófono y la tierra varía entre dos estándares principales, lo que puede causar problemas de compatibilidad.',
+        'Para los conectores TRRS, existen dos estándares de pinout principales, lo que puede causar incompatibilidades entre auriculares con micrófono y dispositivos. La diferencia radica en la posición del micrófono y la tierra (Ground):',
     'list_data': [
       {
-        'title':
-            'Estándar CTIA / AHJ (Apple, Samsung, la mayoría de Android modernos)',
+        'title': 'CTIA (Cellular Telecommunications Industry Association)',
         'details':
-            '**Pinout:**\n* **Tip:** Audio Izquierdo\n* **Ring1:** Audio Derecho\n* **Ring2:** Tierra (Ground)\n* **Sleeve:** Micrófono / Control\n\nEste es el estándar más extendido en auriculares con micrófono para smartphones y tabletas modernas.',
+            '**El estándar más común y moderno, usado por Apple, Samsung (la mayoría), Google, Xbox, y la mayoría de PCs y laptops recientes.**\n* **Tip:** Audio Izquierdo\n* **Ring1:** Audio Derecho\n* **Ring2:** Tierra (Ground)\n* **Sleeve:** Micrófono\nSi tus auriculares son CTIA y tu dispositivo es OMTP, el micrófono no funcionará o el sonido será intermitente. Necesitarías un adaptador.',
+        'image_pinout': 'assets/images/pinouts/trrs_ctia.png',
       },
       {
-        'title': 'Estándar OMTP (Nokia, Sony Ericsson, LG antiguos)',
+        'title': 'OMTP (Open Mobile Terminal Platform)',
         'details':
-            '**Pinout:**\n* **Tip:** Audio Izquierdo\n* **Ring1:** Audio Derecho\n* **Ring2:** Micrófono / Control\n* **Sleeve:** Tierra (Ground)\n\nEste estándar es menos común hoy en día, pero aún se encuentra en algunos dispositivos antiguos. Un auricular OMTP en un dispositivo CTIA (o viceversa) resultará en audio, pero el micrófono y los controles pueden no funcionar.',
-      },
-      {
-        'title': 'Problemas de Compatibilidad Comunes',
-        'details':
-            'Si un micrófono no funciona o se escucha un zumbido al conectar unos auriculares con micrófono, es probable que se deba a una incompatibilidad entre el estándar CTIA y OMTP. Algunos adaptadores (TRRS a TRRS) están disponibles para solucionar este problema invirtiendo los pines de tierra y micrófono.',
+            '**Un estándar más antiguo, usado por algunos dispositivos Android más viejos, Nokia (antes de Microsoft), y algunos dispositivos de origen chino.**\n* **Tip:** Audio Izquierdo\n* **Ring1:** Audio Derecho\n* **Ring2:** Micrófono\n* **Sleeve:** Tierra (Ground)\nSi tus auriculares son OMTP y tu dispositivo es CTIA, el micrófono no funcionará. Necesitarías un adaptador.',
+        'image_pinout': 'assets/images/pinouts/trrs_omtp.png',
       },
     ],
   },
   {
-    'section_title': 'Usos Comunes y Aplicaciones',
+    'section_title': 'Tamaños Comunes de Jack',
     'description':
-        'Los conectores Jack son increíblemente versátiles y se encuentran en una vasta gama de dispositivos de audio.',
+        'Aunque el pinout es el mismo para un tipo dado, los conectores Jack vienen en varios tamaños físicos:',
     'list_data': [
       {
-        'title': 'Auriculares y Cascos',
+        'title': '3.5mm (1/8 de pulgada o Mini-Jack)',
         'details':
-            'La aplicación más común, desde audífonos simples (TRS) hasta auriculares con micrófono y controles para smartphones (TRRS).',
+            'El tamaño más extendido. Utilizado en la mayoría de smartphones, tablets, ordenadores portátiles, auriculares, reproductores de MP3 y sistemas de audio de consumo.',
       },
       {
-        'title': 'Entrada/Salida de Audio (Auxiliar)',
+        'title': '6.35mm (1/4 de pulgada o Jack Estándar)',
         'details':
-            'Para conectar reproductores de música, teléfonos o tablets a sistemas de sonido, radios de coche, etc.',
+            'Comúnmente usado en equipos de audio profesional y semiprofesional como guitarras eléctricas, amplificadores, mezcladores, interfaces de audio y auriculares de estudio.',
       },
       {
-        'title': 'Micrófonos',
+        'title': '2.5mm (3/32 de pulgada o Micro-Jack)',
         'details':
-            'Muchos micrófonos utilizan conectores Jack (generalmente TS o TRS para micrófonos balanceados/estéreo).',
-      },
-      {
-        'title': 'Instrumentos Musicales',
-        'details':
-            'Las guitarras eléctricas y otros instrumentos usan conectores TS de 6.35mm (1/4 pulgada). También se usan para equipos de sonido profesional.',
-      },
-      {
-        'title': 'Control Remoto / Datos',
-        'details':
-            'En algunos equipos (ej. cámaras, proyectores), los jacks pueden llevar señales de control o datos bidireccionales.',
+            'Un tamaño más pequeño, menos común hoy en día. Se encontraba en algunos teléfonos móviles antiguos, radios bidireccionales y dispositivos pequeños.',
       },
     ],
   },
   {
     'section_title': 'Problemas Comunes y Solución de Problemas',
     'description':
-        'Aquí algunas soluciones para problemas típicos con los conectores Jack:',
+        'Los problemas con los conectores Jack suelen estar relacionados con la conexión física o la compatibilidad de estándares. Aquí hay algunas soluciones:',
     'list_data': [
       {
-        'title': 'Sonido solo en un lado (mono o canal izquierdo/derecho)',
+        'title': 'Sonido solo en un canal (un auricular)',
         'details':
-            '**Síntomas:** Audio solo por un auricular o canal.\n**Solución:**\n1.  **Enchufe flojo:** Asegúrate de que el conector Jack esté completamente insertado en el puerto. A veces, unos milímetros pueden hacer la diferencia.\n2.  **Cable dañado:** El cable interno puede estar roto en uno de los canales. Prueba con otro cable/auricular.\n3.  **Configuración de audio:** Verifica la configuración de audio en el dispositivo (balance de canales).\n4.  **Suciedad/Obstrucción:** Limpia el puerto Jack del dispositivo con aire comprimido o un hisopo de algodón seco (con cuidado).',
+            '**Síntomas:** Audio solo sale por el auricular izquierdo o derecho.\n**Solución:**\n1.  **Inserción completa:** Asegurarse de que el conector Jack esté completamente insertado en el puerto del dispositivo. A veces, un empuje adicional lo soluciona.\n2.  **Cable dañado:** El cable de los auriculares podría estar dañado internamente (un cable de audio roto). Probar con otros auriculares o un cable diferente.\n3.  **Puerto sucio/dañado:** Inspeccionar el puerto de audio del dispositivo en busca de suciedad, pelusa o daños. Un palillo de dientes o aire comprimido pueden ayudar a limpiarlo.',
+      },
+      {
+        'title': 'Micrófono no funciona (auriculares TRRS)',
+        'details':
+            '**Síntomas:** El audio de los auriculares funciona, pero el micrófono no detecta voz.\n**Solución:**\n1.  **Incompatibilidad TRRS:** La razón más común es la incompatibilidad entre los estándares CTIA y OMTP. Si el dispositivo y los auriculares usan estándares diferentes, el micrófono no funcionará. Un adaptador TRRS inversor (CTIA a OMTP o viceversa) es la solución.\n2.  **Configuración de entrada:** En la configuración de sonido de tu PC o smartphone, asegúrate de que el micrófono de los auriculares esté seleccionado como dispositivo de entrada predeterminado.\n3.  **Micrófono silenciado/dañado:** Asegúrate de que el micrófono no esté silenciado y que no esté físicamente dañado.',
       },
       {
         'title': 'Sonido distorsionado o con ruido',
         'details':
-            '**Síntomas:** Zumbidos, estática, audio "metálico" o intermitente.\n**Solución:**\n1.  **Conexión floja:** Vuelve a insertar el Jack.\n2.  **Cable/Conector sucio:** La suciedad en los contactos puede causar mala conexión. Limpia el conector del cable y el puerto.\n3.  **Cable dañado:** Especialmente si el cable se ha doblado o pisado con frecuencia.\n4.  **Interferencia:** Aleja el cable de fuentes de interferencia electromagnética (cables de alimentación, routers).',
-      },
-      {
-        'title': 'Micrófono no funciona (en TRRS)',
-        'details':
-            '**Síntomas:** El audio funciona, pero el micrófono no detecta sonido.\n**Solución:**\n1.  **Compatibilidad CTIA/OMTP:** Este es el problema más común. Si tu dispositivo y tus auriculares usan estándares diferentes, el micrófono no funcionará. Busca un adaptador TRRS a TRRS que invierta los pines de tierra y micrófono.\n2.  **Configuración del sistema:** Verifica que el micrófono correcto esté seleccionado como dispositivo de entrada en la configuración de sonido de tu PC/smartphone.\n3.  **Botón de mute:** Algunos auriculares tienen un botón de silencio para el micrófono. Asegúrate de que no esté activado.\n4.  **Micrófono dañado:** Prueba los auriculares con otro dispositivo para descartar un fallo del micrófono.',
+            '**Síntomas:** El audio suena entrecortado, con estática o zumbido.\n**Solución:**\n1.  **Conexión suelta:** Volver a conectar el Jack firmemente.\n2.  **Interferencia:** Alejar el dispositivo o los cables de fuentes de interferencia electromagnética (altavoces sin blindaje, cables de alimentación).\n3.  **Calidad del cable:** Un cable de baja calidad o muy largo puede introducir ruido. Probar con un cable más corto o de mejor blindaje.\n4.  **Configuración de volumen:** Asegurarse de que el volumen no esté demasiado alto, causando distorsión.',
       },
     ],
   },
@@ -213,13 +198,31 @@ class JackDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            // MODIFICACIÓN: Imagen principal con GestureDetector y Hero
+            Hero(
+              tag: _jackImagePath, // El tag debe ser único
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ImageViewerScreen(
+                        imagePath: _jackImagePath,
+                        title:
+                            _jackTitle, // Pasa el título para la pantalla de zoom
+                      ),
+                    ),
+                  );
+                },
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(_jackImagePath, fit: BoxFit.contain),
+                ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset(_jackImagePath, fit: BoxFit.contain),
             ),
             const SizedBox(height: 24),
             Text(
@@ -314,13 +317,13 @@ class JackDetailScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Pines: ${item['pines']}',
+                  'Contactos: ${item['contactos']}',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                 ),
                 Text(
-                  'Descripción: ${item['descripcion']}',
+                  'Función: ${item['funcion']}',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
@@ -329,10 +332,29 @@ class JackDetailScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: Center(
-                      child: Image.asset(
-                        item['imagen_pinout']!,
-                        fit: BoxFit.contain,
-                        height: 150, // Altura fija para las imágenes de pinout
+                      // MODIFICACIÓN: Imagen de pinout dentro de la tabla con GestureDetector y Hero
+                      child: Hero(
+                        tag: item['imagen_pinout']!, // El tag debe ser único
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ImageViewerScreen(
+                                  imagePath: item['imagen_pinout']!,
+                                  title:
+                                      item['tipo']!, // Usa el tipo como título
+                                ),
+                              ),
+                            );
+                          },
+                          child: Image.asset(
+                            item['imagen_pinout']!,
+                            fit: BoxFit.contain,
+                            height:
+                                150, // Altura fija para las imágenes de pinout
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -361,7 +383,7 @@ class JackDetailScreen extends StatelessWidget {
                         columns: const [
                           DataColumn(
                             label: Text(
-                              'Contacto',
+                              'Parte',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -373,7 +395,7 @@ class JackDetailScreen extends StatelessWidget {
                           ),
                           DataColumn(
                             label: Text(
-                              'Tipo',
+                              'Tipo Señal',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -388,7 +410,7 @@ class JackDetailScreen extends StatelessWidget {
                                       : null,
                                 ),
                                 cells: [
-                                  DataCell(Text(pinDetail['pin']!)),
+                                  DataCell(Text(pinDetail['parte']!)),
                                   DataCell(
                                     Text(
                                       pinDetail['funcion']!,
@@ -495,6 +517,37 @@ class JackDetailScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             children: <Widget>[
+              // MODIFICACIÓN: Imagen de pinout dentro de la lista con GestureDetector y Hero
+              if (item.containsKey('image_pinout') &&
+                  item['image_pinout'] != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Center(
+                    child: Hero(
+                      tag: item['image_pinout']!, // El tag debe ser único
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ImageViewerScreen(
+                                imagePath: item['image_pinout']!,
+                                title:
+                                    item['title']!, // Usa el título del elemento de la lista
+                              ),
+                            ),
+                          );
+                        },
+                        child: Image.asset(
+                          item['image_pinout']!,
+                          fit: BoxFit.contain,
+                          height:
+                              120, // Altura más pequeña para pinouts dentro de la lista
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               Text(
                 item['details']!,
                 style: textTheme.bodyLarge?.copyWith(

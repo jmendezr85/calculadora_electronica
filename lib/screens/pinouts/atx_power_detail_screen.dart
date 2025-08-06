@@ -1,11 +1,12 @@
 // lib/screens/pinouts/atx_power_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
 
 const String _atxPowerTitle = 'Conectores de Alimentación ATX';
 const String _atxPowerImagePath =
     'assets/images/pinouts/atx_main_connector.png'; // Asume una imagen del conector ATX principal
 const String _atxPowerDescription =
-    'Las fuentes de alimentación ATX (Advanced Technology eXtended) son el estándar más común para PCs de escritorio. Proporcionan diferentes voltajes (como +3.3V, +5V, +12V, y -12V) a los componentes del sistema a través de varios conectores dedicados. Conocer el propósito y el pinout de cada conector es crucial para construir, reparar y diagnosticar problemas en un PC.';
+    'Las fuentes de alimentación ATX (Advanced Technology eXtended) son el estándar más común para PCs de escritorio. Proporcionan diferentes voltajes (como +3.3V, +5V, +12V, y -12V) a los componentes del sistema a través de varios conectores dedicados. Conocer el propósito y el pinout de cada conector es crucial para construir, reparar y diagnosticar problemas en un PC.'; //
 
 // Función auxiliar para obtener el objeto Color a partir de un tipo de señal o función.
 Color _getColorForVoltage(String voltage) {
@@ -382,7 +383,24 @@ class AtxPowerDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               clipBehavior: Clip.antiAlias,
-              child: Image.asset(_atxPowerImagePath, fit: BoxFit.contain),
+              // MODIFICACIÓN: Imagen principal con GestureDetector y Hero
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ImageViewerScreen(
+                        imagePath: _atxPowerImagePath,
+                        title: _atxPowerTitle,
+                      ),
+                    ),
+                  );
+                },
+                child: Hero(
+                  tag: _atxPowerImagePath, // El tag debe ser único
+                  child: Image.asset(_atxPowerImagePath, fit: BoxFit.contain),
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             Text(
@@ -426,16 +444,33 @@ class AtxPowerDetailScreen extends StatelessWidget {
                       ),
                     ),
                   const SizedBox(height: 12),
-                  if (section.containsKey(
-                    'image_pinout',
-                  )) // Nueva imagen para secciones de tabla
+                  // MODIFICACIÓN: Imagenes de pinout en tablas con GestureDetector y Hero
+                  if (section.containsKey('image_pinout'))
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                       child: Center(
-                        child: Image.asset(
-                          section['image_pinout']!,
-                          fit: BoxFit.contain,
-                          height: 200, // Ajusta la altura según necesites
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ImageViewerScreen(
+                                  imagePath: section['image_pinout']!,
+                                  title:
+                                      section['section_title']!, // Usa el título de la sección
+                                ),
+                              ),
+                            );
+                          },
+                          child: Hero(
+                            tag:
+                                section['image_pinout']!, // Debe ser único por imagen
+                            child: Image.asset(
+                              section['image_pinout']!,
+                              fit: BoxFit.contain,
+                              height: 200, // Ajusta la altura según necesites
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -657,6 +692,36 @@ class AtxPowerDetailScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             children: <Widget>[
+              // MODIFICACIÓN: Imágenes dentro de listas expandibles con GestureDetector y Hero
+              if (item.containsKey('image_pinout') &&
+                  item['image_pinout'] != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ImageViewerScreen(
+                              imagePath: item['image_pinout']!,
+                              title: item['title']!, // Usa el título del ítem
+                            ),
+                          ),
+                        );
+                      },
+                      child: Hero(
+                        tag: item['image_pinout']!, // Debe ser único por imagen
+                        child: Image.asset(
+                          item['image_pinout']!,
+                          fit: BoxFit.contain,
+                          height:
+                              120, // Altura más pequeña para pinouts dentro de la lista
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               Text(
                 item['details']!,
                 style: textTheme.bodyLarge?.copyWith(

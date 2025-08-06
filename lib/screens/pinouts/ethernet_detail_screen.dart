@@ -1,5 +1,6 @@
 // lib/screens/pinouts/ethernet_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
 
 const String _ethernetTitle = 'Puerto y Estándares Ethernet (RJ45)';
 const String _ethernetImagePath = 'assets/images/pinouts/ethernet_port.png';
@@ -262,13 +263,31 @@ class EthernetDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            // MODIFICACIÓN: Imagen principal con GestureDetector y Hero
+            Hero(
+              tag: _ethernetImagePath, // El tag debe ser único
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ImageViewerScreen(
+                        imagePath: _ethernetImagePath,
+                        title:
+                            _ethernetTitle, // Pasa el título para la pantalla de zoom
+                      ),
+                    ),
+                  );
+                },
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(_ethernetImagePath, fit: BoxFit.contain),
+                ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset(_ethernetImagePath, fit: BoxFit.contain),
             ),
             const SizedBox(height: 24),
             Text(
@@ -342,34 +361,37 @@ class EthernetDetailScreen extends StatelessWidget {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return DataTable(
-      columnSpacing: 16, // Espaciado entre columnas
-      dataRowMinHeight: 40, // Altura mínima de fila de datos
-      dataRowMaxHeight: 60, // Altura máxima de fila de datos
-      decoration: BoxDecoration(
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(
-          8,
-        ), // Bordes redondeados para toda la tabla
-      ),
-      headingRowColor: WidgetStateProperty.all(colorScheme.primaryContainer),
-      border: TableBorder.all(
-        color: colorScheme.outlineVariant,
-        width: 1,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      columns: _buildColumns(sectionTitle),
-      rows: data
-          .map(
-            (item) => DataRow(
-              color: WidgetStateProperty.resolveWith<Color?>(
-                (Set<WidgetState> states) =>
-                    states.contains(WidgetState.hovered) ? hoverColor : null,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columnSpacing: 16, // Espaciado entre columnas
+        dataRowMinHeight: 40, // Altura mínima de fila de datos
+        dataRowMaxHeight: 60, // Altura máxima de fila de datos
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(
+            8,
+          ), // Bordes redondeados para toda la tabla
+        ),
+        headingRowColor: WidgetStateProperty.all(colorScheme.primaryContainer),
+        border: TableBorder.all(
+          color: colorScheme.outlineVariant,
+          width: 1,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        columns: _buildColumns(sectionTitle),
+        rows: data
+            .map(
+              (item) => DataRow(
+                color: WidgetStateProperty.resolveWith<Color?>(
+                  (Set<WidgetState> states) =>
+                      states.contains(WidgetState.hovered) ? hoverColor : null,
+                ),
+                cells: _buildCells(item, sectionTitle, context),
               ),
-              cells: _buildCells(item, sectionTitle, context),
-            ),
-          )
-          .toList(),
+            )
+            .toList(),
+      ),
     );
   }
 

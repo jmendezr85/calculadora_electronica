@@ -1,5 +1,6 @@
 // lib/screens/pinouts/serial_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:photo_view/photo_view.dart';
 
 // Datos específicos del Puerto Serie, definidos directamente en esta pantalla.
 const String _serialTitle = 'Puerto Serie';
@@ -197,6 +198,28 @@ const List<Map<String, dynamic>> _serialDetails = [
   },
 ];
 
+class FullScreenImageView extends StatelessWidget {
+  final String imagePath;
+
+  const FullScreenImageView({super.key, required this.imagePath});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Imagen en pantalla completa')),
+      body: PhotoView(
+        imageProvider: AssetImage(imagePath),
+        minScale: PhotoViewComputedScale.contained,
+        maxScale: PhotoViewComputedScale.covered * 2,
+        initialScale: PhotoViewComputedScale.contained,
+        backgroundDecoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+        ),
+      ),
+    );
+  }
+}
+
 class SerialDetailScreen extends StatelessWidget {
   const SerialDetailScreen({super.key});
 
@@ -217,13 +240,27 @@ class SerialDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            Hero(
+              tag: 'serial-image',
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          FullScreenImageView(imagePath: _serialImagePath),
+                    ),
+                  );
+                },
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(_serialImagePath, fit: BoxFit.contain),
+                ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset(_serialImagePath, fit: BoxFit.contain),
             ),
             const SizedBox(height: 24),
             Text(

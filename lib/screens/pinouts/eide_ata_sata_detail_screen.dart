@@ -1,5 +1,6 @@
 // lib/screens/pinouts/eide_ata_sata_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
 
 const String _eideSataTitle = 'Conectores EIDE/ATA y SATA (Almacenamiento)';
 const String _eideSataImagePath =
@@ -200,13 +201,31 @@ class EideAtaSataDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            // MODIFICACIÓN: Imagen principal con GestureDetector y Hero
+            Hero(
+              tag: _eideSataImagePath, // El tag debe ser único
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ImageViewerScreen(
+                        imagePath: _eideSataImagePath,
+                        title:
+                            _eideSataTitle, // Pasa el título para la pantalla de zoom
+                      ),
+                    ),
+                  );
+                },
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(_eideSataImagePath, fit: BoxFit.contain),
+                ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset(_eideSataImagePath, fit: BoxFit.contain),
             ),
             const SizedBox(height: 24),
             Text(
@@ -256,10 +275,29 @@ class EideAtaSataDetailScreen extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                       child: Center(
-                        child: Image.asset(
-                          section['image_pinout']!,
-                          fit: BoxFit.contain,
-                          height: 180, // Ajusta la altura
+                        // MODIFICACIÓN: Imagen de pinout dentro de la tabla con GestureDetector y Hero
+                        child: Hero(
+                          tag:
+                              section['image_pinout']!, // El tag debe ser único
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ImageViewerScreen(
+                                    imagePath: section['image_pinout']!,
+                                    title:
+                                        section['section_title']!, // Usa el título de la sección
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Image.asset(
+                              section['image_pinout']!,
+                              fit: BoxFit.contain,
+                              height: 180, // Ajusta la altura
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -425,11 +463,29 @@ class EideAtaSataDetailScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: Center(
-                    child: Image.asset(
-                      item['image_pinout']!,
-                      fit: BoxFit.contain,
-                      height:
-                          120, // Altura más pequeña para pinouts dentro de la lista
+                    // MODIFICACIÓN: Imagen de pinout dentro de la lista con GestureDetector y Hero
+                    child: Hero(
+                      tag: item['image_pinout']!, // El tag debe ser único
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ImageViewerScreen(
+                                imagePath: item['image_pinout']!,
+                                title:
+                                    item['title']!, // Usa el título del elemento
+                              ),
+                            ),
+                          );
+                        },
+                        child: Image.asset(
+                          item['image_pinout']!,
+                          fit: BoxFit.contain,
+                          height:
+                              120, // Altura más pequeña para pinouts dentro de la lista
+                        ),
+                      ),
                     ),
                   ),
                 ),

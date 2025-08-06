@@ -1,9 +1,9 @@
 // lib/screens/pinouts/vga_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:photo_view/photo_view.dart';
 
 const String _vgaTitle = 'Conector VGA (Video Graphics Array)';
-const String _vgaImagePath =
-    'assets/images/pinouts/vga_connector.png'; // Asume que tienes una imagen genérica
+const String _vgaImagePath = 'assets/images/pinouts/vga_connector.png';
 const String _vgaDescription =
     'El conector VGA (Video Graphics Array), también conocido como conector DE-15 o HD-15, es una interfaz de pantalla analógica que se utiliza para conectar ordenadores con monitores, proyectores y televisores de alta definición. Fue introducido por IBM en 1987 y, a pesar de la aparición de interfaces digitales como DVI, HDMI y DisplayPort, sigue siendo común en equipos y proyectores antiguos o de propósito especial.';
 
@@ -11,26 +11,26 @@ const String _vgaDescription =
 Color _getColorForSignalType(String type) {
   switch (type.toLowerCase()) {
     case 'red video':
-      return Colors.red.shade400; // Video Rojo
+      return Colors.red.shade400;
     case 'green video':
-      return Colors.green.shade400; // Video Verde
+      return Colors.green.shade400;
     case 'blue video':
-      return Colors.blue.shade400; // Video Azul
+      return Colors.blue.shade400;
     case 'hsync':
-      return Colors.orange.shade200; // Sincronización Horizontal
+      return Colors.orange.shade200;
     case 'vsync':
-      return Colors.purple.shade200; // Sincronización Vertical
+      return Colors.purple.shade200;
     case 'ground':
-      return Colors.grey.shade600; // Tierra
+      return Colors.grey.shade600;
     case 'id bit':
-      return Colors.amber.shade200; // Bits de ID (EDID)
+      return Colors.amber.shade200;
     case 'power':
-      return Colors.red.shade200; // Alimentación (raramente usada)
+      return Colors.red.shade200;
     case 'nc':
     case 'no conectado':
-      return Colors.grey.shade300; // No conectado
+      return Colors.grey.shade300;
     default:
-      return Colors.grey.shade100; // Por defecto
+      return Colors.grey.shade100;
   }
 }
 
@@ -44,8 +44,7 @@ const List<Map<String, dynamic>> _vgaDetails = [
         'tipo': 'VGA DB-15 Macho (Vista Frontal)',
         'pines': '15',
         'descripcion': 'El conector estándar de 15 pines para video analógico.',
-        'imagen_pinout':
-            'assets/images/pinouts/vga_standard_pinout.png', // Asume imagen específica
+        'imagen_pinout': 'assets/images/pinouts/vga_standard_pinout.png',
         'pin_details': [
           {
             'pin': '1',
@@ -205,6 +204,28 @@ const List<Map<String, dynamic>> _vgaDetails = [
   },
 ];
 
+class FullScreenImageView extends StatelessWidget {
+  final String imagePath;
+
+  const FullScreenImageView({super.key, required this.imagePath});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Imagen en pantalla completa')),
+      body: PhotoView(
+        imageProvider: AssetImage(imagePath),
+        minScale: PhotoViewComputedScale.contained,
+        maxScale: PhotoViewComputedScale.covered * 2,
+        initialScale: PhotoViewComputedScale.contained,
+        backgroundDecoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+        ),
+      ),
+    );
+  }
+}
+
 class VGADetailScreen extends StatelessWidget {
   const VGADetailScreen({super.key});
 
@@ -230,13 +251,27 @@ class VGADetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            Hero(
+              tag: 'vga-image',
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          FullScreenImageView(imagePath: _vgaImagePath),
+                    ),
+                  );
+                },
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(_vgaImagePath, fit: BoxFit.contain),
+                ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset(_vgaImagePath, fit: BoxFit.contain),
             ),
             const SizedBox(height: 24),
             Text(
@@ -346,10 +381,25 @@ class VGADetailScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: Center(
-                      child: Image.asset(
-                        item['imagen_pinout']!,
-                        fit: BoxFit.contain,
-                        height: 150, // Altura fija para las imágenes de pinout
+                      child: Hero(
+                        tag: 'pinout-${item['imagen_pinout']}',
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FullScreenImageView(
+                                  imagePath: item['imagen_pinout']!,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Image.asset(
+                            item['imagen_pinout']!,
+                            fit: BoxFit.contain,
+                            height: 150,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -432,7 +482,6 @@ class VGADetailScreen extends StatelessWidget {
     );
   }
 
-  // Método para construir la celda de tipo de señal con color de fondo
   DataCell _buildSignalTypeCell(String signalType, BuildContext context) {
     final color = _getColorForSignalType(signalType);
     final textColor = color.computeLuminance() > 0.5

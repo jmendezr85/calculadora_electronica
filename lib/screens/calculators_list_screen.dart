@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // <--- ¡IMPORTANTE! Importa el paquete 'provider'
-import 'package:calculadora_electronica/main.dart'; // Importa ThemeProvider
 
 // Importa todas tus pantallas de calculadoras aquí
-// Asegúrate de que las rutas sean correctas para cada archivo
 import 'package:calculadora_electronica/screens/calculators/capacitor_calculator_screen.dart';
 import 'package:calculadora_electronica/screens/calculators/led_resistor_screen.dart';
 import 'package:calculadora_electronica/screens/calculators/rc_circuit_simulator_screen.dart';
@@ -31,16 +28,12 @@ import 'package:calculadora_electronica/screens/calculators/power_calculator_scr
 import 'package:calculadora_electronica/screens/calculators/frequency_converter.dart';
 import 'package:calculadora_electronica/screens/calculators/adc_calculator_screen.dart';
 
-// Volvemos a StatelessWidget ya que Provider.of se encargará de las actualizaciones
 class CalculatorsListScreen extends StatelessWidget {
   const CalculatorsListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
-    // <--- ¡IMPORTANTE! Accedemos al ThemeProvider usando Provider.of
-    final themeProvider = Provider.of<ThemeProvider>(context);
 
     // Lista de calculadoras disponibles con sus respectivos iconos Y COLORES
     final List<Map<String, dynamic>> calculators = [
@@ -208,29 +201,6 @@ class CalculatorsListScreen extends StatelessWidget {
         backgroundColor: colorScheme.primaryContainer,
         foregroundColor: colorScheme.onPrimaryContainer,
         centerTitle: true,
-        actions: [
-          // Widget para alternar el tema
-          Switch(
-            value: themeProvider.themeMode == ThemeMode.dark,
-            onChanged: (isDarkMode) {
-              themeProvider.toggleTheme(isDarkMode);
-            },
-            // Cambios a WidgetStateProperty y WidgetState por depreciación
-            thumbIcon: WidgetStateProperty.resolveWith<Icon?>((
-              Set<WidgetState> states,
-            ) {
-              if (states.contains(WidgetState.selected)) {
-                return const Icon(Icons.nightlight_round);
-              }
-              return const Icon(Icons.wb_sunny_rounded);
-            }),
-            trackOutlineColor: WidgetStateProperty.all(
-              colorScheme.onPrimaryContainer.withAlpha(100),
-            ),
-            activeColor: colorScheme.tertiary,
-            inactiveThumbColor: colorScheme.onPrimaryContainer,
-          ),
-        ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16.0),
@@ -238,7 +208,6 @@ class CalculatorsListScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           final calculator = calculators[index];
           return Container(
-            // Cambiado de Card a Container para aplicar bordes y sombra directamente
             margin: const EdgeInsets.symmetric(vertical: 8.0),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,

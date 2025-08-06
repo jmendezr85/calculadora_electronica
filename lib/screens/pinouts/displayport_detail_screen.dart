@@ -1,5 +1,6 @@
 // lib/screens/pinouts/displayport_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
 
 const String _displayPortTitle = 'Conector DisplayPort';
 const String _displayPortImagePath =
@@ -327,13 +328,34 @@ class DisplayPortDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            // MODIFICACIÓN: Imagen principal con GestureDetector y Hero
+            Hero(
+              tag: _displayPortImagePath, // El tag debe ser único
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ImageViewerScreen(
+                        imagePath: _displayPortImagePath,
+                        title:
+                            _displayPortTitle, // Pasa el título para la pantalla de zoom
+                      ),
+                    ),
+                  );
+                },
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    _displayPortImagePath,
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset(_displayPortImagePath, fit: BoxFit.contain),
             ),
             const SizedBox(height: 24),
             Text(
@@ -443,10 +465,29 @@ class DisplayPortDetailScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: Center(
-                      child: Image.asset(
-                        item['imagen_pinout']!,
-                        fit: BoxFit.contain,
-                        height: 150, // Altura fija para las imágenes de pinout
+                      // MODIFICACIÓN: Imagen de pinout dentro de la tabla con GestureDetector y Hero
+                      child: Hero(
+                        tag: item['imagen_pinout']!, // El tag debe ser único
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ImageViewerScreen(
+                                  imagePath: item['imagen_pinout']!,
+                                  title:
+                                      item['tipo']!, // Usa el tipo como título
+                                ),
+                              ),
+                            );
+                          },
+                          child: Image.asset(
+                            item['imagen_pinout']!,
+                            fit: BoxFit.contain,
+                            height:
+                                150, // Altura fija para las imágenes de pinout
+                          ),
+                        ),
                       ),
                     ),
                   ),

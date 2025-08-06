@@ -1,36 +1,35 @@
 // lib/screens/pinouts/xlr_dmx_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:photo_view/photo_view.dart';
 
 const String _xlrDmxTitle =
     'Conectores XLR y DMX (Audio Profesional e Iluminación)';
-const String _xlrDmxImagePath =
-    'assets/images/pinouts/xlr_connector.png'; // Asume una imagen genérica XLR
+const String _xlrDmxImagePath = 'assets/images/pinouts/xlr_connector.png';
 const String _xlrDmxDescription =
     'Los conectores XLR (originalmente llamados "Cannon XLR") son un tipo de conector eléctrico profesional utilizado principalmente para equipos de audio, video e iluminación escénica. Son conocidos por su robustez, su capacidad para transmisiones balanceadas y su mecanismo de bloqueo. En el ámbito de la iluminación, son el estándar para la comunicación digital DMX512.';
 
-// Función auxiliar para obtener el objeto Color a partir de un tipo de señal o función.
 Color _getColorForSignalType(String type) {
   switch (type.toLowerCase()) {
     case 'ground':
-      return Colors.grey.shade600; // Tierra
+      return Colors.grey.shade600;
     case 'audio hot (+ve)':
-      return Colors.red.shade400; // Audio Caliente (+)
+      return Colors.red.shade400;
     case 'audio cold (-ve)':
-      return Colors.blue.shade400; // Audio Frío (-)
+      return Colors.blue.shade400;
     case 'dmx data -':
-      return Colors.orange.shade400; // DMX Data -
+      return Colors.orange.shade400;
     case 'dmx data +':
-      return Colors.green.shade400; // DMX Data +
+      return Colors.green.shade400;
     case 'secondary data -':
     case 'secondary data +':
-      return Colors.purple.shade200; // Datos Secundarios
+      return Colors.purple.shade200;
     case 'power':
-      return Colors.amber.shade200; // Alimentación (en raras configuraciones)
+      return Colors.amber.shade200;
     case 'no conectado':
     case 'nc':
-      return Colors.grey.shade300; // No conectado
+      return Colors.grey.shade300;
     default:
-      return Colors.grey.shade100; // Por defecto
+      return Colors.grey.shade100;
   }
 }
 
@@ -45,8 +44,7 @@ const List<Map<String, dynamic>> _xlrDmxDetails = [
         'pines': '3',
         'descripcion':
             'El conector más común para micrófonos, mezcladores y equipos de audio profesional. Ofrece transmisión de audio balanceada.',
-        'imagen_pinout':
-            'assets/images/pinouts/xlr_3_pin_audio_pinout.png', // Asume imagen específica
+        'imagen_pinout': 'assets/images/pinouts/xlr_3_pin_audio_pinout.png',
         'pin_details': [
           {
             'pin': '1',
@@ -70,8 +68,7 @@ const List<Map<String, dynamic>> _xlrDmxDetails = [
         'pines': '4',
         'descripcion':
             'Puede usarse para alimentación phantom, auriculares de intercomunicación, o audio estéreo balanceado (Raramente).',
-        'imagen_pinout':
-            'assets/images/pinouts/xlr_4_pin_audio_pinout.png', // Asume imagen específica
+        'imagen_pinout': 'assets/images/pinouts/xlr_4_pin_audio_pinout.png',
         'pin_details': [
           {'pin': '1', 'funcion': 'Ground', 'tipo_senal': 'Ground'},
           {
@@ -99,8 +96,7 @@ const List<Map<String, dynamic>> _xlrDmxDetails = [
         'pines': '3',
         'descripcion':
             'Aunque común en equipos económicos, el estándar DMX preferido es el de 5 pines. Su uso puede causar problemas de interferencia si se confunde con audio.',
-        'imagen_pinout':
-            'assets/images/pinouts/xlr_3_pin_dmx_pinout.png', // Asume imagen específica
+        'imagen_pinout': 'assets/images/pinouts/xlr_3_pin_dmx_pinout.png',
         'pin_details': [
           {'pin': '1', 'funcion': 'Ground / Shield', 'tipo_senal': 'Ground'},
           {
@@ -120,8 +116,7 @@ const List<Map<String, dynamic>> _xlrDmxDetails = [
         'pines': '5',
         'descripcion':
             'El conector estándar y recomendado para DMX512. Ofrece un par de datos secundario para futuras expansiones o control bidireccional (RDM).',
-        'imagen_pinout':
-            'assets/images/pinouts/xlr_5_pin_dmx_pinout.png', // Asume imagen específica
+        'imagen_pinout': 'assets/images/pinouts/xlr_5_pin_dmx_pinout.png',
         'pin_details': [
           {'pin': '1', 'funcion': 'Ground / Shield', 'tipo_senal': 'Ground'},
           {
@@ -224,13 +219,20 @@ class XlrDmxDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            // Imagen principal con zoom
+            GestureDetector(
+              onTap: () => _showFullScreenImage(context, _xlrDmxImagePath),
+              child: Hero(
+                tag: _xlrDmxImagePath,
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(_xlrDmxImagePath, fit: BoxFit.contain),
+                ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset(_xlrDmxImagePath, fit: BoxFit.contain),
             ),
             const SizedBox(height: 24),
             Text(
@@ -296,6 +298,43 @@ class XlrDmxDetailScreen extends StatelessWidget {
     );
   }
 
+  void _showFullScreenImage(BuildContext context, String imagePath) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+            elevation: 0,
+          ),
+          body: Center(
+            child: PhotoView(
+              imageProvider: AssetImage(imagePath),
+              minScale: PhotoViewComputedScale.contained,
+              maxScale: PhotoViewComputedScale.covered * 3,
+              heroAttributes: PhotoViewHeroAttributes(tag: imagePath),
+              backgroundDecoration: const BoxDecoration(color: Colors.black),
+              loadingBuilder: (context, event) => Center(
+                child: SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: CircularProgressIndicator(
+                    value: event == null
+                        ? 0
+                        : event.cumulativeBytesLoaded /
+                              event.expectedTotalBytes!,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTable(
     List<dynamic> data,
     String sectionTitle,
@@ -339,11 +378,18 @@ class XlrDmxDetailScreen extends StatelessWidget {
                 if (item.containsKey('imagen_pinout'))
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Center(
-                      child: Image.asset(
-                        item['imagen_pinout']!,
-                        fit: BoxFit.contain,
-                        height: 150, // Altura fija para las imágenes de pinout
+                    child: GestureDetector(
+                      onTap: () =>
+                          _showFullScreenImage(context, item['imagen_pinout']!),
+                      child: Hero(
+                        tag: item['imagen_pinout']!,
+                        child: Center(
+                          child: Image.asset(
+                            item['imagen_pinout']!,
+                            fit: BoxFit.contain,
+                            height: 150,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -426,7 +472,6 @@ class XlrDmxDetailScreen extends StatelessWidget {
     );
   }
 
-  // Método para construir la celda de tipo de señal con color de fondo
   DataCell _buildSignalTypeCell(String signalType, BuildContext context) {
     final color = _getColorForSignalType(signalType);
     final textColor = color.computeLuminance() > 0.5

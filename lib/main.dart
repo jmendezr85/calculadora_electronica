@@ -1,92 +1,144 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart'; // <--- Importa el paquete 'provider'
+import 'package:provider/provider.dart';
 
-// Importa la nueva pantalla principal del dashboard que manejará las pestañas
 import 'package:calculadora_electronica/screens/main_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   runApp(
-    // <--- ¡IMPORTANTE! Envuelve MyApp con ChangeNotifierProvider
     ChangeNotifierProvider(
-      create: (context) => ThemeProvider(prefs: prefs),
-      child:
-          const MyApp(), // MyApp ya no necesita 'prefs' directamente si se usa Provider
+      create: (context) => AppSettings(prefs: prefs),
+      child: const MyApp(),
     ),
   );
 }
 
-class ThemeProvider extends ChangeNotifier {
-  ThemeMode _themeMode;
+class AppSettings extends ChangeNotifier {
+  final SharedPreferences prefs;
 
-  ThemeProvider({required SharedPreferences prefs})
-    : _themeMode =
-          (prefs.getBool('isDarkMode') ??
-              (WidgetsBinding.instance.platformDispatcher.platformBrightness ==
-                  Brightness.dark))
-          ? ThemeMode.dark
-          : ThemeMode.light;
+  AppSettings({required this.prefs}) {
+    _loadSettings();
+  }
 
+  // --- Propiedades del Tema ---
+  ThemeMode _themeMode = ThemeMode.system;
   ThemeMode get themeMode => _themeMode;
 
-  void toggleTheme(bool isDarkMode) {
-    _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light;
-    _saveThemePreference(isDarkMode);
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    // Guarda el tema en SharedPreferences
+    if (mode == ThemeMode.dark) {
+      prefs.setBool('isDarkMode', true);
+    } else if (mode == ThemeMode.light) {
+      prefs.setBool('isDarkMode', false);
+    } else {
+      prefs.remove('isDarkMode');
+    }
     notifyListeners();
   }
 
-  void _saveThemePreference(bool isDarkMode) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool('isDarkMode', isDarkMode);
+  // --- Propiedades de las Configuraciones ---
+  bool _notificationsEnabled = true;
+  bool _hapticFeedback = true;
+  String _selectedLanguage = 'Español';
+  double _fontSize = 1.0;
+  bool _professionalMode = false;
+
+  bool get notificationsEnabled => _notificationsEnabled;
+  bool get hapticFeedback => _hapticFeedback;
+  String get selectedLanguage => _selectedLanguage;
+  double get fontSize => _fontSize;
+  bool get professionalMode => _professionalMode;
+
+  void _loadSettings() {
+    // Carga el tema
+    final isDarkMode = prefs.getBool('isDarkMode');
+    if (isDarkMode == true) {
+      _themeMode = ThemeMode.dark;
+    } else if (isDarkMode == false) {
+      _themeMode = ThemeMode.light;
+    } else {
+      _themeMode = ThemeMode.system;
+    }
+
+    // Carga las demás configuraciones
+    _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
+    _hapticFeedback = prefs.getBool('hapticFeedback') ?? true;
+    _selectedLanguage = prefs.getString('selectedLanguage') ?? 'Español';
+    _fontSize = prefs.getDouble('fontSize') ?? 1.0;
+    _professionalMode = prefs.getBool('professionalMode') ?? false;
+
+    notifyListeners();
+  }
+
+  // Métodos para cambiar las configuraciones
+  void setNotificationsEnabled(bool value) {
+    _notificationsEnabled = value;
+    prefs.setBool('notificationsEnabled', value);
+    notifyListeners();
+  }
+
+  void setHapticFeedback(bool value) {
+    _hapticFeedback = value;
+    prefs.setBool('hapticFeedback', value);
+    notifyListeners();
+  }
+
+  void setSelectedLanguage(String value) {
+    _selectedLanguage = value;
+    prefs.setString('selectedLanguage', value);
+    notifyListeners();
+  }
+
+  void setFontSize(double value) {
+    _fontSize = value;
+    prefs.setDouble('fontSize', value);
+    notifyListeners();
+  }
+
+  void setProfessionalMode(bool value) {
+    _professionalMode = value;
+    prefs.setBool('professionalMode', value);
+    notifyListeners();
+  }
+
+  // Método para restablecer todas las configuraciones
+  void resetSettings() {
+    setThemeMode(ThemeMode.system);
+    setNotificationsEnabled(true);
+    setHapticFeedback(true);
+    setSelectedLanguage('Español');
+    setFontSize(1.0);
+    setProfessionalMode(false);
   }
 }
 
-class MyApp extends StatefulWidget {
-  // final SharedPreferences prefs; // <--- Esta propiedad ya no es necesaria aquí
-
-  const MyApp({super.key}); // <--- Constructor sin 'prefs'
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  // ThemeProvider ahora se obtiene del contexto a través de Provider
-  // late final ThemeProvider _themeProvider; // <--- ELIMINA ESTA LÍNEA
-
-  @override
-  void initState() {
-    super.initState();
-    // Ya no inicializamos _themeProvider aquí
-  }
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // <--- ¡IMPORTANTE! Obtenemos ThemeProvider usando Provider.of
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final appSettings = Provider.of<AppSettings>(context);
 
     return MaterialApp(
       title: 'Calculadora Electrónica',
       debugShowCheckedModeBanner: false,
-      themeMode: themeProvider.themeMode, // Usa el themeProvider obtenido
+      themeMode: appSettings.themeMode,
       theme: ThemeData(
-        // Colores para el modo claro
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue, // Usamos azul para un look más "tecnológico"
+          seedColor: Colors.blue,
           brightness: Brightness.light,
         ),
         useMaterial3: true,
       ),
       darkTheme: ThemeData(
-        // Colores para el modo oscuro
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue, // Misma semilla, pero con brillo oscuro
+          seedColor: Colors.blue,
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
-        // Personalización para el AppBar en modo oscuro
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.grey[900],
           foregroundColor: Colors.white,

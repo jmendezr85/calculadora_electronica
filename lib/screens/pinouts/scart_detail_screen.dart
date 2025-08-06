@@ -1,9 +1,9 @@
 // lib/screens/pinouts/scart_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:photo_view/photo_view.dart';
 
 const String _scartTitle = 'Conector SCART (Euroconector)';
-const String _scartImagePath =
-    'assets/images/pinouts/scart_connector.png'; // Asume que tienes una imagen SCART
+const String _scartImagePath = 'assets/images/pinouts/scart_connector.png';
 const String _scartDescription =
     'El conector SCART (Syndicat des Constructeurs d\'Appareils Radiorécepteurs et Téléviseurs), también conocido como Euroconector, es un estándar de conector y protocolo de señales analógicas de 21 pines que fue ampliamente utilizado en Europa para conectar equipos de audio y vídeo, como televisores, reproductores de VCR, reproductores de DVD y consolas de videojuegos. Aunque ha sido en gran medida reemplazado por estándares digitales como HDMI, SCART fue innovador al permitir múltiples tipos de señales (compuesto, S-Video, RGB e incluso audio estéreo) a través de un solo cable, eliminando la necesidad de múltiples cables de conexión.';
 
@@ -13,23 +13,23 @@ Color _getColorForSignalType(String type) {
     case 'video in':
     case 'video out':
     case 'video rgb':
-      return Colors.blue.shade200; // Señales de video
+      return Colors.blue.shade200;
     case 'audio in':
     case 'audio out':
-      return Colors.green.shade200; // Señales de audio
+      return Colors.green.shade200;
     case 'data/control':
-      return Colors.orange.shade200; // Señales de control/datos
+      return Colors.orange.shade200;
     case 'ground':
-      return Colors.grey.shade600; // Tierra
+      return Colors.grey.shade600;
     case 'power':
-      return Colors.red.shade200; // Alimentación
+      return Colors.red.shade200;
     case 'switch':
-      return Colors.purple.shade200; // Señales de conmutación
+      return Colors.purple.shade200;
     case 'no conectado':
     case 'nc':
-      return Colors.grey.shade300; // No conectado
+      return Colors.grey.shade300;
     default:
-      return Colors.grey.shade100; // Por defecto
+      return Colors.grey.shade100;
   }
 }
 
@@ -194,6 +194,28 @@ const List<Map<String, dynamic>> _scartDetails = [
   },
 ];
 
+class FullScreenImageView extends StatelessWidget {
+  final String imagePath;
+
+  const FullScreenImageView({super.key, required this.imagePath});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Imagen en pantalla completa')),
+      body: PhotoView(
+        imageProvider: AssetImage(imagePath),
+        minScale: PhotoViewComputedScale.contained,
+        maxScale: PhotoViewComputedScale.covered * 2,
+        initialScale: PhotoViewComputedScale.contained,
+        backgroundDecoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+        ),
+      ),
+    );
+  }
+}
+
 class ScartDetailScreen extends StatelessWidget {
   const ScartDetailScreen({super.key});
 
@@ -219,13 +241,27 @@ class ScartDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            Hero(
+              tag: 'scart-image',
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          FullScreenImageView(imagePath: _scartImagePath),
+                    ),
+                  );
+                },
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(_scartImagePath, fit: BoxFit.contain),
+                ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset(_scartImagePath, fit: BoxFit.contain),
             ),
             const SizedBox(height: 24),
             Text(
@@ -413,7 +449,6 @@ class ScartDetailScreen extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final baseColor = colorScheme.surfaceContainerHighest;
 
-    // Usar las propiedades 'a', 'r', 'g', 'b' (normalizadas de 0.0 a 1.0) y convertirlas a int (0-255)
     final int convertedAlpha = (baseColor.a * 255.0).round().clamp(0, 255);
     final int convertedRed = (baseColor.r * 255.0).round().clamp(0, 255);
     final int convertedGreen = (baseColor.g * 255.0).round().clamp(0, 255);

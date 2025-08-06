@@ -19,7 +19,8 @@ dependencies:
   math_expressions: ^2.5.0
   path_provider: ^2.1.1
   vector_math: ^2.1.4
-  provider: ^6.0.5 # <--- ¡IMPORTANTE! Asegúrate de que esté aquí, no en dev_dependencies
+  provider: ^6.0.5
+  photo_view: ^0.14.0 # <--- ¡IMPORTANTE! Asegúrate de que esté aquí, no en dev_dependencies
 
 dev_dependencies:
   flutter_test:
