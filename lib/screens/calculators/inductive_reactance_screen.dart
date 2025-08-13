@@ -1,7 +1,9 @@
 // lib/screens/inductive_reactance_screen.dart
 import 'package:flutter/material.dart';
-import 'dart:math' as math; // Para math.pi
-import 'package:calculadora_electronica/utils/unit_utils.dart'; // Para las utilidades de unidades
+import 'dart:math' as math;
+import 'package:calculadora_electronica/utils/unit_utils.dart';
+import 'package:provider/provider.dart';
+import 'package:calculadora_electronica/main.dart';
 
 class InductiveReactanceScreen extends StatefulWidget {
   const InductiveReactanceScreen({super.key});
@@ -14,28 +16,37 @@ class InductiveReactanceScreen extends StatefulWidget {
 class _InductiveReactanceScreenState extends State<InductiveReactanceScreen> {
   final TextEditingController _frequencyController = TextEditingController();
   final TextEditingController _inductanceController = TextEditingController();
+  final TextEditingController _resistanceController = TextEditingController();
 
   String _result = '';
   String _frequencyUnit = 'Hz';
   String _inductanceUnit = 'H';
+  String _resistanceUnit = 'Ω';
+  String _qFactorResult = '';
+  String _impedanceResult = '';
 
   final List<String> _frequencyUnits = ['Hz', 'kHz', 'MHz', 'GHz'];
   final List<String> _inductanceUnits = ['H', 'mH', 'µH', 'nH'];
+  final List<String> _resistanceUnits = ['Ω', 'kΩ', 'MΩ'];
 
   @override
   void dispose() {
     _frequencyController.dispose();
     _inductanceController.dispose();
+    _resistanceController.dispose();
     super.dispose();
   }
 
   void _calculateReactance() {
     setState(() {
-      _result = ''; // Limpiar resultado anterior
+      _result = '';
+      _qFactorResult = '';
+      _impedanceResult = '';
     });
 
     final double? frequencyInput = double.tryParse(_frequencyController.text);
     final double? inductanceInput = double.tryParse(_inductanceController.text);
+    final double? resistanceInput = double.tryParse(_resistanceController.text);
 
     if (frequencyInput == null || inductanceInput == null) {
       setState(() {
@@ -52,7 +63,6 @@ class _InductiveReactanceScreenState extends State<InductiveReactanceScreen> {
       return;
     }
 
-    // Convertir a unidades base (Hz y Henrios)
     double frequencyHz = UnitUtils.convertToBase(
       frequencyInput,
       _frequencyUnit,
@@ -64,10 +74,7 @@ class _InductiveReactanceScreenState extends State<InductiveReactanceScreen> {
       UnitCategory.inductance,
     );
 
-    // Fórmula: XL = 2 * pi * f * L
     double reactanceOhm = 2 * math.pi * frequencyHz * inductanceH;
-
-    // Convertir el resultado a una unidad más legible (ej. Ohmios, kOhmios)
     String formattedReactance = UnitUtils.formatResult(
       reactanceOhm,
       UnitCategory.resistance,
@@ -76,21 +83,49 @@ class _InductiveReactanceScreenState extends State<InductiveReactanceScreen> {
     setState(() {
       _result = 'Reactancia Inductiva (XL): $formattedReactance';
     });
+
+    // Cálculo de modo profesional
+    if (resistanceInput != null && resistanceInput > 0) {
+      double resistanceOhm = UnitUtils.convertToBase(
+        resistanceInput,
+        _resistanceUnit,
+        UnitCategory.resistance,
+      );
+
+      // Calcular Factor Q (Q = XL / R)
+      double qFactor = reactanceOhm / resistanceOhm;
+      _qFactorResult = 'Factor de Calidad (Q): ${qFactor.toStringAsFixed(2)}';
+
+      // Calcular Impedancia (Z = sqrt(R^2 + XL^2))
+      double impedance = math.sqrt(
+        math.pow(resistanceOhm, 2) + math.pow(reactanceOhm, 2),
+      );
+      String formattedImpedance = UnitUtils.formatResult(
+        impedance,
+        UnitCategory.resistance,
+      );
+      _impedanceResult = 'Impedancia (Z): $formattedImpedance';
+    }
   }
 
   void _clearFields() {
     setState(() {
       _frequencyController.clear();
       _inductanceController.clear();
+      _resistanceController.clear();
       _result = '';
+      _qFactorResult = '';
+      _impedanceResult = '';
       _frequencyUnit = 'Hz';
       _inductanceUnit = 'H';
+      _resistanceUnit = 'Ω';
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final settings = Provider.of<AppSettings>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -110,72 +145,29 @@ class _InductiveReactanceScreenState extends State<InductiveReactanceScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _frequencyController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Frecuencia (f)',
-                      hintText: 'Ej: 1000',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                DropdownButton<String>(
-                  value: _frequencyUnit,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _frequencyUnit = newValue!;
-                    });
-                  },
-                  items: _frequencyUnits.map<DropdownMenuItem<String>>((
-                    String value,
-                  ) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                ),
-              ],
+            _buildInputRow(
+              _frequencyController,
+              'Frecuencia (f)',
+              'Ej: 1000',
+              _frequencyUnit,
+              _frequencyUnits,
+              (newValue) => setState(() => _frequencyUnit = newValue!),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _inductanceController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Inductancia (L)',
-                      hintText: 'Ej: 0.01',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                DropdownButton<String>(
-                  value: _inductanceUnit,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _inductanceUnit = newValue!;
-                    });
-                  },
-                  items: _inductanceUnits.map<DropdownMenuItem<String>>((
-                    String value,
-                  ) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                ),
-              ],
+            _buildInputRow(
+              _inductanceController,
+              'Inductancia (L)',
+              'Ej: 0.01',
+              _inductanceUnit,
+              _inductanceUnits,
+              (newValue) => setState(() => _inductanceUnit = newValue!),
             ),
             const SizedBox(height: 24),
+            // Sección de modo profesional
+            if (settings.professionalMode) ...[
+              _buildProfessionalModeSection(colorScheme),
+              const SizedBox(height: 24),
+            ],
             ElevatedButton(
               onPressed: _calculateReactance,
               style: ElevatedButton.styleFrom(
@@ -214,6 +206,113 @@ class _InductiveReactanceScreenState extends State<InductiveReactanceScreen> {
                   textAlign: TextAlign.center,
                 ),
               ),
+            if (_qFactorResult.isNotEmpty || _impedanceResult.isNotEmpty)
+              const SizedBox(height: 12),
+            if (_qFactorResult.isNotEmpty || _impedanceResult.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.secondaryContainer.withAlpha(128),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    if (_qFactorResult.isNotEmpty)
+                      Text(
+                        _qFactorResult,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSecondaryContainer,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    if (_impedanceResult.isNotEmpty)
+                      Text(
+                        _impedanceResult,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSecondaryContainer,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputRow(
+    TextEditingController controller,
+    String labelText,
+    String hintText,
+    String unitValue,
+    List<String> units,
+    ValueChanged<String?> onChanged,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: labelText,
+              hintText: hintText,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        DropdownButton<String>(
+          value: unitValue,
+          onChanged: onChanged,
+          items: units.map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(value: value, child: Text(value));
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfessionalModeSection(ColorScheme colorScheme) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Opciones de Modo Profesional',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                Icon(Icons.military_tech, color: colorScheme.primary),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            Text(
+              'Cálculos adicionales para un circuito R-L en serie:',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            _buildInputRow(
+              _resistanceController,
+              'Resistencia (R)',
+              'Ej: 100',
+              _resistanceUnit,
+              _resistanceUnits,
+              (newValue) => setState(() => _resistanceUnit = newValue!),
+            ),
           ],
         ),
       ),

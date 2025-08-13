@@ -27,6 +27,7 @@ import 'package:calculadora_electronica/screens/calculators/pcb_trace_width_calc
 import 'package:calculadora_electronica/screens/calculators/power_calculator_screen.dart';
 import 'package:calculadora_electronica/screens/calculators/frequency_converter.dart';
 import 'package:calculadora_electronica/screens/calculators/adc_calculator_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/electronic_symbols_screen.dart';
 
 class CalculatorsListScreen extends StatelessWidget {
   const CalculatorsListScreen({super.key});
@@ -192,6 +193,12 @@ class CalculatorsListScreen extends StatelessWidget {
         'screen': const AdcCalculatorScreen(),
         'icon': Icons.compare,
         'color': Colors.greenAccent[700],
+      },
+      {
+        'name': 'Símbolos Electrónicos',
+        'screen': const ElectronicSymbolsScreen(),
+        'icon': Icons.graphic_eq,
+        'color': Colors.deepPurple[700],
       },
     ];
 

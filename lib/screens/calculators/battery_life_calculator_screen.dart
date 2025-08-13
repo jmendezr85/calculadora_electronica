@@ -1,6 +1,7 @@
-// lib/screens/battery_life_calculator_screen.dart
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:calculadora_electronica/main.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class BatteryLifeCalculatorScreen extends StatefulWidget {
   const BatteryLifeCalculatorScreen({super.key});
@@ -13,37 +14,39 @@ class BatteryLifeCalculatorScreen extends StatefulWidget {
 class _BatteryLifeCalculatorScreenState
     extends State<BatteryLifeCalculatorScreen>
     with SingleTickerProviderStateMixin {
-  // Para la capacidad de la batería
+  // Controladores básicos
   final TextEditingController _capacityController = TextEditingController();
   String _capacityUnit = 'mAh';
   final List<String> _capacityUnits = ['mAh', 'Ah'];
 
-  // Para el consumo de corriente (opción directa)
   final TextEditingController _currentController = TextEditingController();
   String _currentUnit = 'mA';
   final List<String> _currentUnits = ['µA', 'mA', 'A'];
 
-  // Para el consumo de potencia y voltaje (opción indirecta para calcular corriente)
   final TextEditingController _powerController = TextEditingController();
   final TextEditingController _voltageController = TextEditingController();
   String _powerUnit = 'mW';
   String _voltageUnit = 'V';
-
   final List<String> _powerUnits = ['mW', 'W'];
   final List<String> _voltageUnits = ['mV', 'V'];
 
+  // Controladores profesionales
+  final TextEditingController _efficiencyController = TextEditingController(
+    text: '95',
+  );
+  final TextEditingController _dodController = TextEditingController(
+    text: '80',
+  );
+  final TextEditingController _cyclesController = TextEditingController(
+    text: '500',
+  );
+  final TextEditingController _tempController = TextEditingController(
+    text: '25',
+  );
+
+  // Estado
   String _batteryLifeResult = '';
-
-  // Animación de la batería
-  late AnimationController _animationController;
-  late Animation<double> _batteryAnimation;
-  double _currentBatteryLevel =
-      0.0; // Usado para el valor final del CircularProgressIndicator
-
-  // Selector del método de entrada de corriente
   bool _directCurrentInputMode = true;
-
-  // Selector del formato de tiempo de salida
   String _selectedTimeFormatUnit = 'Horas';
   final List<String> _timeFormatUnits = [
     'Segundos',
@@ -54,168 +57,151 @@ class _BatteryLifeCalculatorScreenState
     'Meses',
     'Años',
   ];
+  bool _showAdvancedChart = false;
+  List<FlSpot> _degradationSpots = [];
+
+  // Animación
+  late AnimationController _animationController;
+  late Animation<double> _batteryAnimation;
+  double _currentBatteryLevel = 0.0;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(
-        seconds: 1,
-      ), // Duración de la animación de llenado
+      duration: const Duration(seconds: 1),
     );
-    _batteryAnimation =
-        Tween<double>(
-          begin: 0.0,
-          end: 0.0,
-        ).animate(_animationController)..addListener(() {
-          setState(
-            () {},
-          ); // Reconstruye el widget cada vez que cambia el valor de la animación
-        });
+    _batteryAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.0,
+    ).animate(_animationController)..addListener(() => setState(() {}));
   }
 
-  // Función para convertir valores de entrada a unidades base
+  // Métodos de conversión
   double _convertToBaseCapacity(double value, String unit) {
     switch (unit) {
       case 'mAh':
-        return value / 1000; // Convertir mAh a Ah
-      case 'Ah':
+        return value / 1000;
       default:
-        return value; // Ya está en Ah
+        return value;
     }
   }
 
   double _convertToBaseCurrent(double value, String unit) {
     switch (unit) {
       case 'µA':
-        return value / 1e6; // Convertir µA a A
+        return value / 1e6;
       case 'mA':
-        return value / 1000; // Convertir mA a A
-      case 'A':
+        return value / 1000;
       default:
-        return value; // Ya está en A
+        return value;
     }
   }
 
   double _convertToBasePower(double value, String unit) {
     switch (unit) {
       case 'mW':
-        return value / 1000; // Convertir mW a W
-      case 'W':
+        return value / 1000;
       default:
-        return value; // Ya está en W
+        return value;
     }
   }
 
   double _convertToBaseVoltage(double value, String unit) {
     switch (unit) {
       case 'mV':
-        return value / 1000; // Convertir mV a V
-      case 'V':
+        return value / 1000;
       default:
-        return value; // Ya está en V
+        return value;
     }
   }
 
   void _calculateBatteryLife() {
-    setState(() {
-      final double rawCapacity =
-          double.tryParse(_capacityController.text) ?? 0.0;
-      double currentA = 0.0;
+    final isPro = context.read<AppSettings>().professionalMode;
+    final double rawCapacity = double.tryParse(_capacityController.text) ?? 0.0;
+    double currentA = 0.0;
 
-      if (_directCurrentInputMode) {
-        final double rawCurrent =
-            double.tryParse(_currentController.text) ?? 0.0;
-        currentA = _convertToBaseCurrent(rawCurrent, _currentUnit);
-      } else {
-        final double rawPower = double.tryParse(_powerController.text) ?? 0.0;
-        final double rawVoltage =
-            double.tryParse(_voltageController.text) ?? 0.0;
+    if (_directCurrentInputMode) {
+      currentA = _convertToBaseCurrent(
+        double.tryParse(_currentController.text) ?? 0.0,
+        _currentUnit,
+      );
+    } else {
+      final powerW = _convertToBasePower(
+        double.tryParse(_powerController.text) ?? 0.0,
+        _powerUnit,
+      );
+      final voltageV = _convertToBaseVoltage(
+        double.tryParse(_voltageController.text) ?? 0.0,
+        _voltageUnit,
+      );
+      currentA = voltageV > 0 ? powerW / voltageV : 0.0;
+    }
 
-        final double powerW = _convertToBasePower(rawPower, _powerUnit);
-        final double voltageV = _convertToBaseVoltage(rawVoltage, _voltageUnit);
+    if (rawCapacity > 0 && currentA > 0) {
+      double capacityAh = _convertToBaseCapacity(rawCapacity, _capacityUnit);
 
-        if (voltageV > 0) {
-          currentA = powerW / voltageV; // I = P / V
-        } else {
-          _batteryLifeResult = 'El voltaje no puede ser cero.';
-          _currentBatteryLevel = 0.0;
-          _animationController.reset();
-          return; // Salir si el voltaje es inválido
-        }
+      if (isPro) {
+        final efficiency =
+            (double.tryParse(_efficiencyController.text) ?? 100) / 100;
+        final dod = (double.tryParse(_dodController.text) ?? 100) / 100;
+        capacityAh = capacityAh * efficiency * dod;
+        _generateDegradationData(capacityAh, currentA);
       }
 
-      if (rawCapacity > 0 && currentA > 0) {
-        final double capacityAh = _convertToBaseCapacity(
-          rawCapacity,
-          _capacityUnit,
-        );
+      final double batteryLifeHours = capacityAh / currentA;
+      _batteryLifeResult = _formatBatteryLife(
+        batteryLifeHours,
+        _selectedTimeFormatUnit,
+      );
+      _currentBatteryLevel = 1.0;
 
-        // Fórmula: Vida útil (horas) = Capacidad (Ah) / Corriente (A)
-        final double batteryLifeHours = capacityAh / currentA;
-
-        _batteryLifeResult = _formatBatteryLife(
-          batteryLifeHours,
-          _selectedTimeFormatUnit,
-        );
-        _currentBatteryLevel =
-            1.0; // Representa que el cálculo se completó y la batería 'llena'
-
-        // Iniciar la animación
-        _animationController.reset();
-        _batteryAnimation = Tween<double>(
-          begin: 0.0,
-          end: _currentBatteryLevel,
-        ).animate(_animationController);
-        _animationController.forward();
-      } else {
-        _batteryLifeResult = 'Ingrese valores válidos';
-        _currentBatteryLevel = 0.0;
-        _animationController.reset();
-      }
-    });
+      _animationController.reset();
+      _batteryAnimation = Tween<double>(
+        begin: 0.0,
+        end: _currentBatteryLevel,
+      ).animate(_animationController);
+      _animationController.forward();
+    } else {
+      _batteryLifeResult = 'Ingrese valores válidos';
+      _currentBatteryLevel = 0.0;
+      _animationController.reset();
+    }
+    setState(() {});
   }
 
-  // Función para formatear la vida útil de la batería según la unidad seleccionada
-  String _formatBatteryLife(double hours, String unit) {
-    double value;
-    String suffix;
+  void _generateDegradationData(double capacity, double current) {
+    _degradationSpots = [];
+    final int cycles = int.tryParse(_cyclesController.text) ?? 500;
+    final double temp = double.tryParse(_tempController.text) ?? 25;
+    final double tempEffect = 1 - ((temp - 25) * 0.005);
 
+    for (int i = 0; i <= cycles; i += 50) {
+      final degradation = 0.0002 * i * tempEffect;
+      final remainingCapacity = capacity * (1 - degradation);
+      final lifeHours = remainingCapacity / current;
+      _degradationSpots.add(FlSpot(i.toDouble(), lifeHours));
+    }
+  }
+
+  String _formatBatteryLife(double hours, String unit) {
     switch (unit) {
       case 'Segundos':
-        value = hours * 3600;
-        suffix = 'segundos';
-        break;
+        return '${(hours * 3600).toStringAsFixed(2)} segundos';
       case 'Minutos':
-        value = hours * 60;
-        suffix = 'minutos';
-        break;
-      case 'Horas':
-        value = hours;
-        suffix = 'horas';
-        break;
+        return '${(hours * 60).toStringAsFixed(2)} minutos';
       case 'Días':
-        value = hours / 24;
-        suffix = 'días';
-        break;
+        return '${(hours / 24).toStringAsFixed(2)} días';
       case 'Semanas':
-        value = hours / (24 * 7);
-        suffix = 'semanas';
-        break;
+        return '${(hours / 168).toStringAsFixed(2)} semanas';
       case 'Meses':
-        value = hours / (24 * 30.4375); // Promedio de días al mes
-        suffix = 'meses';
-        break;
+        return '${(hours / 730).toStringAsFixed(2)} meses';
       case 'Años':
-        value = hours / (24 * 365.25);
-        suffix = 'años';
-        break;
+        return '${(hours / 8760).toStringAsFixed(2)} años';
       default:
-        value = hours;
-        suffix = 'horas'; // Por defecto
+        return '${hours.toStringAsFixed(2)} horas';
     }
-    return '${value.toStringAsFixed(2)} $suffix';
   }
 
   void _clearCalculations() {
@@ -224,15 +210,10 @@ class _BatteryLifeCalculatorScreenState
       _currentController.clear();
       _powerController.clear();
       _voltageController.clear();
-
-      _capacityUnit = 'mAh';
-      _currentUnit = 'mA';
-      _powerUnit = 'mW';
-      _voltageUnit = 'V';
-
       _batteryLifeResult = '';
-      _currentBatteryLevel = 0.0; // Restablecer la visualización
-      _animationController.reset(); // Reiniciar la animación
+      _currentBatteryLevel = 0.0;
+      _animationController.reset();
+      _degradationSpots = [];
     });
   }
 
@@ -242,338 +223,514 @@ class _BatteryLifeCalculatorScreenState
     _currentController.dispose();
     _powerController.dispose();
     _voltageController.dispose();
-    _animationController
-        .dispose(); // IMPORTANTE: Disponer del controlador de animación
+    _efficiencyController.dispose();
+    _dodController.dispose();
+    _cyclesController.dispose();
+    _tempController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isPro = context.select<AppSettings, bool>((s) => s.professionalMode);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Calculadora de Vida de Batería'),
-        backgroundColor: colorScheme.primaryContainer,
-        foregroundColor: colorScheme.onPrimaryContainer,
-        centerTitle: true,
+        actions: [
+          if (isPro)
+            const Chip(
+              label: Text('PRO', style: TextStyle(color: Colors.white)),
+              backgroundColor: Colors.deepPurple,
+            ),
+        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Calcule la vida útil de una batería basándose en su capacidad y el consumo de corriente/potencia del dispositivo.',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 20),
-            _buildInputField(
+            // Sección básica
+            _buildInputSection(
+              icon: Icons.battery_charging_full,
+              title: 'Capacidad de la Batería',
               controller: _capacityController,
-              labelText: 'Capacidad de la Batería',
-              hintText: 'Ej: 2000',
               unit: _capacityUnit,
               units: _capacityUnits,
-              onUnitChanged: (newValue) {
-                setState(() {
-                  _capacityUnit = newValue!;
-                });
-              },
-              icon: Icons.battery_charging_full,
+              onUnitChanged: (v) => setState(() => _capacityUnit = v ?? 'mAh'),
             ),
+
             const SizedBox(height: 20),
-            Text(
-              'Cómo desea ingresar el consumo:',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Método de entrada:', style: theme.textTheme.titleMedium),
             Row(
               children: [
                 Expanded(
-                  child: RadioListTile<bool>(
-                    title: const Text('Corriente Directa'),
+                  child: RadioListTile(
+                    title: const Text('Corriente'),
                     value: true,
                     groupValue: _directCurrentInputMode,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _directCurrentInputMode = value!;
-                        _clearCalculations();
-                      });
-                    },
+                    onChanged: (v) => setState(() {
+                      _directCurrentInputMode = v ?? true;
+                      _clearCalculations();
+                    }),
                   ),
                 ),
                 Expanded(
-                  child: RadioListTile<bool>(
-                    title: const Text('Potencia y Voltaje'),
+                  child: RadioListTile(
+                    title: const Text('Potencia/Voltaje'),
                     value: false,
                     groupValue: _directCurrentInputMode,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _directCurrentInputMode = value!;
-                        _clearCalculations();
-                      });
-                    },
+                    onChanged: (v) => setState(() {
+                      _directCurrentInputMode = v ?? false;
+                      _clearCalculations();
+                    }),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 15),
+
             if (_directCurrentInputMode)
-              _buildInputField(
+              _buildInputSection(
+                icon: Icons.electrical_services,
+                title: 'Consumo de Corriente',
                 controller: _currentController,
-                labelText: 'Corriente de Consumo',
-                hintText: 'Ej: 50',
                 unit: _currentUnit,
                 units: _currentUnits,
-                onUnitChanged: (newValue) {
-                  setState(() {
-                    _currentUnit = newValue!;
-                  });
-                },
-                icon: Icons.electrical_services,
+                onUnitChanged: (v) => setState(() => _currentUnit = v ?? 'mA'),
               )
             else
               Column(
                 children: [
-                  _buildInputField(
+                  _buildInputSection(
+                    icon: Icons.power,
+                    title: 'Consumo de Potencia',
                     controller: _powerController,
-                    labelText: 'Potencia del Dispositivo',
-                    hintText: 'Ej: 0.5',
                     unit: _powerUnit,
                     units: _powerUnits,
-                    onUnitChanged: (newValue) {
-                      setState(() {
-                        _powerUnit = newValue!;
-                      });
-                    },
-                    icon: Icons.power,
+                    onUnitChanged: (v) =>
+                        setState(() => _powerUnit = v ?? 'mW'),
                   ),
-                  const SizedBox(height: 15),
-                  _buildInputField(
+                  const SizedBox(height: 10),
+                  _buildInputSection(
+                    icon: Icons.flash_on,
+                    title: 'Voltaje',
                     controller: _voltageController,
-                    labelText: 'Voltaje de la Batería (o del Dispositivo)',
-                    hintText: 'Ej: 3.7',
                     unit: _voltageUnit,
                     units: _voltageUnits,
-                    onUnitChanged: (newValue) {
-                      setState(() {
-                        _voltageUnit = newValue!;
-                      });
-                    },
-                    icon: Icons.flash_on,
+                    onUnitChanged: (v) =>
+                        setState(() => _voltageUnit = v ?? 'V'),
                   ),
                 ],
               ),
-            const SizedBox(height: 20),
-            Text(
-              'Formato de Tiempo de Salida:',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            DropdownButton<String>(
-              value: _selectedTimeFormatUnit,
-              isExpanded: true,
-              items: _timeFormatUnits.map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  _selectedTimeFormatUnit = newValue!;
-                  if (_batteryLifeResult.isNotEmpty &&
-                      _batteryLifeResult != 'Ingrese valores válidos' &&
-                      _batteryLifeResult != 'El voltaje no puede ser cero.') {
-                    // Recalcular el formato si ya hay un resultado
-                    final double rawCapacity =
-                        double.tryParse(_capacityController.text) ?? 0.0;
-                    double currentA = 0.0;
 
-                    if (_directCurrentInputMode) {
-                      final double rawCurrent =
-                          double.tryParse(_currentController.text) ?? 0.0;
-                      currentA = _convertToBaseCurrent(
-                        rawCurrent,
-                        _currentUnit,
-                      );
-                    } else {
-                      final double rawPower =
-                          double.tryParse(_powerController.text) ?? 0.0;
-                      final double rawVoltage =
-                          double.tryParse(_voltageController.text) ?? 0.0;
-                      final double powerW = _convertToBasePower(
-                        rawPower,
-                        _powerUnit,
-                      );
-                      final double voltageV = _convertToBaseVoltage(
-                        rawVoltage,
-                        _voltageUnit,
-                      );
-                      currentA = (voltageV > 0) ? powerW / voltageV : 0.0;
-                    }
-                    if (rawCapacity > 0 && currentA > 0) {
-                      final double capacityAh = _convertToBaseCapacity(
-                        rawCapacity,
-                        _capacityUnit,
-                      );
-                      final double batteryLifeHours = capacityAh / currentA;
-                      _batteryLifeResult = _formatBatteryLife(
-                        batteryLifeHours,
-                        _selectedTimeFormatUnit,
-                      );
-                    }
-                  }
-                });
-              },
+            const SizedBox(height: 20),
+            _buildInputSection(
+              icon: Icons.timer,
+              title: 'Formato de Tiempo',
+              controller: null,
+              unit: _selectedTimeFormatUnit,
+              units: _timeFormatUnits,
+              onUnitChanged: (v) => setState(() {
+                _selectedTimeFormatUnit = v ?? 'Horas';
+                if (_batteryLifeResult.isNotEmpty) _calculateBatteryLife();
+              }),
+              isDropdownOnly: true,
             ),
+
+            // Sección profesional mejorada
+            if (isPro) ...[
+              const SizedBox(height: 24),
+              _buildProSectionHeader(context),
+              const SizedBox(height: 12),
+
+              ExpansionTile(
+                initiallyExpanded: true,
+                title: const Text(
+                  'Parámetros Avanzados',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                leading: const Icon(Icons.tune, color: Colors.deepPurple),
+                children: [
+                  _buildProParameter(
+                    context,
+                    icon: Icons.battery_saver,
+                    label: 'Eficiencia',
+                    value: _efficiencyController.text,
+                    unit: '%',
+                    onChanged: (v) =>
+                        setState(() => _efficiencyController.text = v),
+                    min: 50,
+                    max: 100,
+                  ),
+                  _buildProParameter(
+                    context,
+                    icon: Icons.vertical_align_bottom,
+                    label: 'Profundidad de Descarga',
+                    value: _dodController.text,
+                    unit: '%',
+                    onChanged: (v) => setState(() => _dodController.text = v),
+                    min: 20,
+                    max: 100,
+                  ),
+                  _buildProParameter(
+                    context,
+                    icon: Icons.repeat,
+                    label: 'Ciclos de Vida',
+                    value: _cyclesController.text,
+                    unit: 'ciclos',
+                    onChanged: (v) =>
+                        setState(() => _cyclesController.text = v),
+                    min: 100,
+                    max: 2000,
+                  ),
+                  _buildProParameter(
+                    context,
+                    icon: Icons.thermostat,
+                    label: 'Temperatura',
+                    value: _tempController.text,
+                    unit: '°C',
+                    onChanged: (v) => setState(() => _tempController.text = v),
+                    min: -20,
+                    max: 60,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Theme.of(context).dividerColor),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.show_chart,
+                            color: Colors.deepPurple,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Degradación por Ciclos',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.deepPurple,
+                            ),
+                          ),
+                          const Spacer(),
+                          Switch(
+                            value: _showAdvancedChart,
+                            onChanged: (v) =>
+                                setState(() => _showAdvancedChart = v),
+                            activeColor: Colors.deepPurple,
+                          ),
+                        ],
+                      ),
+                      if (_showAdvancedChart &&
+                          _degradationSpots.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 200,
+                          child: _buildEnhancedDegradationChart(context),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Capacidad residual estimada tras ${_cyclesController.text} ciclos',
+                          style: theme.textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
+            // Botones y resultado
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _calculateBatteryLife,
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(50),
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
               ),
-              child: const Text('Calcular Vida Útil'),
+              child: const Text('CALCULAR'),
             ),
             const SizedBox(height: 10),
-            ElevatedButton(
+            OutlinedButton(
               onPressed: _clearCalculations,
-              style: ElevatedButton.styleFrom(
+              style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(50),
-                backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
               ),
-              child: const Text('Borrar Cálculos'),
+              child: const Text('LIMPIAR'),
             ),
             const SizedBox(height: 20),
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Resultado de la Vida Útil:',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: AnimatedBuilder(
-                        animation: _batteryAnimation,
-                        builder: (context, child) {
-                          // Define el color basado en el progreso de la animación
-                          Color indicatorColor;
-                          if (_batteryAnimation.value > 0.6) {
-                            indicatorColor = Colors.green;
-                          } else if (_batteryAnimation.value > 0.3) {
-                            indicatorColor = Colors.orange;
-                          } else {
-                            indicatorColor = Colors.red;
-                          }
-
-                          return Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              SizedBox(
-                                width: 100,
-                                height: 100,
-                                child: CircularProgressIndicator(
-                                  value: _batteryAnimation
-                                      .value, // Usa el valor de la animación
-                                  strokeWidth: 10,
-                                  backgroundColor: Colors.grey.shade300,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    indicatorColor,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                Icons.battery_full,
-                                size: 60,
-                                color: indicatorColor,
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: Text(
-                        _batteryLifeResult.isNotEmpty &&
-                                _batteryLifeResult !=
-                                    'Ingrese valores válidos' &&
-                                _batteryLifeResult !=
-                                    'El voltaje no puede ser cero.'
-                            ? 'La batería durará aproximadamente:'
-                            : 'Ingrese datos para calcular.',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                    ),
-                    Center(
-                      child: Text(
-                        _batteryLifeResult,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineMedium!
-                            .copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.primary,
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            _buildResultCard(theme),
           ],
         ),
       ),
     );
   }
 
-  // Widget genérico para campos de entrada con selector de unidad e icono
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String labelText,
-    String? hintText,
+  // ============ COMPONENTES PERSONALIZADOS ============
+
+  Widget _buildInputSection({
+    required IconData icon,
+    required String title,
+    required TextEditingController? controller,
     required String unit,
-    required List<String> units,
-    required ValueChanged<String?> onUnitChanged,
-    IconData? icon,
+    List<String> units = const [],
+    required ValueChanged<String?>? onUnitChanged,
+    bool isDropdownOnly = false,
   }) {
     return Row(
       children: [
-        if (icon != null) ...[
-          Icon(icon, color: Theme.of(context).colorScheme.secondary),
-          const SizedBox(width: 10),
-        ],
+        Icon(icon, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(width: 10),
         Expanded(
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: labelText,
-              hintText: hintText,
-              border: const OutlineInputBorder(),
+          child: !isDropdownOnly
+              ? TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: title,
+                    border: const OutlineInputBorder(),
+                  ),
+                )
+              : InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: title,
+                    border: const OutlineInputBorder(),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: unit,
+                      isExpanded: true,
+                      items: units
+                          .map(
+                            (u) => DropdownMenuItem(value: u, child: Text(u)),
+                          )
+                          .toList(),
+                      onChanged: onUnitChanged,
+                    ),
+                  ),
+                ),
+        ),
+        if (!isDropdownOnly && units.isNotEmpty) ...[
+          const SizedBox(width: 10),
+          DropdownButton<String>(
+            value: unit,
+            items: units
+                .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                .toList(),
+            onChanged: onUnitChanged,
+          ),
+        ] else if (!isDropdownOnly) ...[
+          const SizedBox(width: 10),
+          Text(unit, style: Theme.of(context).textTheme.bodyLarge),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildProSectionHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.withAlpha(30),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.deepPurple.withAlpha(100)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.engineering, color: Colors.deepPurple),
+          const SizedBox(width: 12),
+          Text(
+            'MODO PROFESIONAL',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Colors.deepPurple,
+              fontWeight: FontWeight.bold,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProParameter(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required String unit,
+    required Function(String) onChanged,
+    required double min,
+    required double max,
+  }) {
+    final double numericValue = double.tryParse(value) ?? min;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: Colors.deepPurple),
+              const SizedBox(width: 12),
+              Text(label, style: Theme.of(context).textTheme.bodyMedium),
+              const Spacer(),
+              SizedBox(
+                width: 60,
+                child: TextField(
+                  controller: TextEditingController(text: value),
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    suffixText: unit,
+                    border: const UnderlineInputBorder(),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: onChanged,
+                ),
+              ),
+            ],
+          ),
+          Slider(
+            value: numericValue.clamp(min, max),
+            min: min,
+            max: max,
+            divisions: (max - min).toInt(),
+            label: '$numericValue$unit',
+            activeColor: Colors.deepPurple,
+            onChanged: (v) => onChanged(v.round().toString()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedDegradationChart(BuildContext context) {
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(show: true, drawVerticalLine: false),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, _) => Text('${value.toInt()}'),
+              reservedSize: 22,
+            ),
+          ),
+          rightTitles: const AxisTitles(),
+          topTitles: const AxisTitles(),
         ),
-        const SizedBox(width: 10),
-        DropdownButton<String>(
-          value: unit,
-          items: units.map((String value) {
-            return DropdownMenuItem<String>(
-              // <--- CORRECCIÓN AQUÍ
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
-          onChanged: onUnitChanged,
+        lineBarsData: [
+          LineChartBarData(
+            spots: _degradationSpots,
+            isCurved: true,
+            color: Colors.deepPurple,
+            barWidth: 3,
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                colors: [
+                  Colors.deepPurple.withAlpha(50),
+                  Colors.deepPurple.withAlpha(10),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            dotData: const FlDotData(show: false),
+          ),
+        ],
+        minX: 0,
+        maxX: _degradationSpots.isNotEmpty ? _degradationSpots.last.x : 1000,
+        minY: 0,
+        maxY: _degradationSpots.isNotEmpty
+            ? _degradationSpots.first.y * 1.1
+            : 100,
+      ),
+    );
+  }
+
+  Widget _buildResultCard(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text('RESULTADO', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 16),
+            AnimatedBuilder(
+              animation: _batteryAnimation,
+              builder: (context, _) {
+                final progress = _batteryAnimation.value;
+                Color color;
+                if (progress > 0.7) {
+                  color = Colors.green;
+                } else if (progress > 0.3) {
+                  color = Colors.orange;
+                } else {
+                  color = Colors.red;
+                }
+
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: CircularProgressIndicator(
+                        value: progress,
+                        strokeWidth: 10,
+                        backgroundColor: isDark
+                            ? Colors.grey.shade800
+                            : Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation(color),
+                      ),
+                    ),
+                    Icon(Icons.battery_full, size: 40, color: color),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            if (_batteryLifeResult.isEmpty)
+              Text(
+                'Ingrese los parámetros para calcular',
+                style: theme.textTheme.bodyLarge,
+              )
+            else
+              Column(
+                children: [
+                  Text('Vida estimada:', style: theme.textTheme.bodyLarge),
+                  const SizedBox(height: 8),
+                  Text(
+                    _batteryLifeResult,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

@@ -1,118 +1,155 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'package:calculadora_electronica/screens/main_dashboard_screen.dart';
+import 'app_localizations.dart';
+import 'screens/settings_screen.dart';
+import 'screens/main_dashboard_screen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => AppSettings(prefs: prefs),
-      child: const MyApp(),
-    ),
-  );
+/// =============================================================
+/// AppSettings: estado global + persistencia (SharedPreferences)
+/// =============================================================
+class AppSettings extends ChangeNotifier {
+  late SharedPreferences _prefs;
+  bool _ready = false;
+
+  // Preferencias
+  ThemeMode _themeMode = ThemeMode.system;
+  double _fontSize = 1.0; // 1.0 = 100%
+  bool _professionalMode = false;
+  bool _hapticFeedback = true;
+  String _selectedLanguage = 'es';
+
+  // Color semilla (tema). Guardamos ARGB 32 bits como int.
+  int _seedColorValue = 0xFF1867FF; // azul por defecto
+
+  AppSettings() {
+    _init();
+  }
+
+  Future<void> _init() async {
+    _prefs = await SharedPreferences.getInstance();
+
+    _themeMode =
+        ThemeMode.values[_prefs.getInt('themeMode') ?? ThemeMode.system.index];
+    _fontSize = _prefs.getDouble('fontSize') ?? 1.0;
+    _professionalMode = _prefs.getBool('professionalMode') ?? false;
+    _hapticFeedback = _prefs.getBool('hapticFeedback') ?? true;
+    _selectedLanguage = _prefs.getString('selectedLanguage') ?? 'es';
+    _seedColorValue = _prefs.getInt('seedColor') ?? 0xFF1867FF;
+
+    _ready = true;
+    notifyListeners();
+  }
+
+  bool get isReady => _ready;
+
+  // ==================== Tema ====================
+  ThemeMode get themeMode => _themeMode;
+  void setThemeMode(ThemeMode m) {
+    _themeMode = m;
+    _prefs.setInt('themeMode', m.index);
+    notifyListeners();
+  }
+
+  // Getter Color semilla (como Color)
+  Color get seedColor => Color(_seedColorValue);
+
+  // Setter evitando deprecations (usa canales normalizados .a/.r/.g/.b)
+  void setSeedColor(Color c) {
+    // .a/.r/.g/.b son double 0..1 en tu SDK -> conviértelo a 0..255
+    final a = (c.a * 255.0).round() & 0xff;
+    final r = (c.r * 255.0).round() & 0xff;
+    final g = (c.g * 255.0).round() & 0xff;
+    final b = (c.b * 255.0).round() & 0xff;
+    final argb = (a << 24) | (r << 16) | (g << 8) | b;
+    if (argb == _seedColorValue) return;
+    _seedColorValue = argb;
+    _prefs.setInt('seedColor', _seedColorValue);
+    notifyListeners();
+  }
+
+  // Paleta sugerida (para la rejilla)
+  List<Color> get availableSeedColors => const [
+    Colors.blue,
+    Colors.red,
+    Colors.green,
+    Colors.orange,
+    Colors.purple,
+    Colors.teal,
+    Colors.indigo,
+    Colors.pink,
+    Colors.brown,
+    Colors.cyan,
+  ];
+
+  // ==================== Tipografía ====================
+  // Alias compatible con tu pantalla de ajustes: textScale
+  double get textScale => _fontSize;
+  void setTextScale(double v) => setFontSize(v);
+
+  double get fontSize => _fontSize;
+  void setFontSize(double v) {
+    if (v < 0.85) v = 0.85;
+    if (v > 1.25) v = 1.25;
+    _fontSize = v;
+    _prefs.setDouble('fontSize', v);
+    notifyListeners();
+  }
+
+  // ==================== Funcionalidad ====================
+  bool get professionalMode => _professionalMode;
+  void setProfessionalMode(bool v) {
+    _professionalMode = v;
+    _prefs.setBool('professionalMode', v);
+    notifyListeners();
+  }
+
+  bool get hapticFeedback => _hapticFeedback;
+  void setHapticFeedback(bool v) {
+    _hapticFeedback = v;
+    _prefs.setBool('hapticFeedback', v);
+    notifyListeners();
+  }
+
+  // ==================== Idioma ====================
+  String get selectedLanguage => _selectedLanguage;
+  void setLanguage(String code) => setSelectedLanguage(code);
+  void setSelectedLanguage(String code) {
+    _selectedLanguage = code;
+    _prefs.setString('selectedLanguage', code);
+    notifyListeners();
+  }
+
+  // ==================== Restablecer ====================
+  Future<void> resetToDefaults() async {
+    _themeMode = ThemeMode.system;
+    _fontSize = 1.0;
+    _professionalMode = false;
+    _hapticFeedback = true;
+    _selectedLanguage = 'es';
+    _seedColorValue = 0xFF1867FF;
+
+    await _prefs.setInt('themeMode', _themeMode.index);
+    await _prefs.setDouble('fontSize', _fontSize);
+    await _prefs.setBool('professionalMode', _professionalMode);
+    await _prefs.setBool('hapticFeedback', _hapticFeedback);
+    await _prefs.setString('selectedLanguage', _selectedLanguage);
+    await _prefs.setInt('seedColor', _seedColorValue);
+
+    notifyListeners();
+  }
 }
 
-class AppSettings extends ChangeNotifier {
-  final SharedPreferences prefs;
-
-  AppSettings({required this.prefs}) {
-    _loadSettings();
-  }
-
-  // --- Propiedades del Tema ---
-  ThemeMode _themeMode = ThemeMode.system;
-  ThemeMode get themeMode => _themeMode;
-
-  void setThemeMode(ThemeMode mode) {
-    _themeMode = mode;
-    // Guarda el tema en SharedPreferences
-    if (mode == ThemeMode.dark) {
-      prefs.setBool('isDarkMode', true);
-    } else if (mode == ThemeMode.light) {
-      prefs.setBool('isDarkMode', false);
-    } else {
-      prefs.remove('isDarkMode');
-    }
-    notifyListeners();
-  }
-
-  // --- Propiedades de las Configuraciones ---
-  bool _notificationsEnabled = true;
-  bool _hapticFeedback = true;
-  String _selectedLanguage = 'Español';
-  double _fontSize = 1.0;
-  bool _professionalMode = false;
-
-  bool get notificationsEnabled => _notificationsEnabled;
-  bool get hapticFeedback => _hapticFeedback;
-  String get selectedLanguage => _selectedLanguage;
-  double get fontSize => _fontSize;
-  bool get professionalMode => _professionalMode;
-
-  void _loadSettings() {
-    // Carga el tema
-    final isDarkMode = prefs.getBool('isDarkMode');
-    if (isDarkMode == true) {
-      _themeMode = ThemeMode.dark;
-    } else if (isDarkMode == false) {
-      _themeMode = ThemeMode.light;
-    } else {
-      _themeMode = ThemeMode.system;
-    }
-
-    // Carga las demás configuraciones
-    _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
-    _hapticFeedback = prefs.getBool('hapticFeedback') ?? true;
-    _selectedLanguage = prefs.getString('selectedLanguage') ?? 'Español';
-    _fontSize = prefs.getDouble('fontSize') ?? 1.0;
-    _professionalMode = prefs.getBool('professionalMode') ?? false;
-
-    notifyListeners();
-  }
-
-  // Métodos para cambiar las configuraciones
-  void setNotificationsEnabled(bool value) {
-    _notificationsEnabled = value;
-    prefs.setBool('notificationsEnabled', value);
-    notifyListeners();
-  }
-
-  void setHapticFeedback(bool value) {
-    _hapticFeedback = value;
-    prefs.setBool('hapticFeedback', value);
-    notifyListeners();
-  }
-
-  void setSelectedLanguage(String value) {
-    _selectedLanguage = value;
-    prefs.setString('selectedLanguage', value);
-    notifyListeners();
-  }
-
-  void setFontSize(double value) {
-    _fontSize = value;
-    prefs.setDouble('fontSize', value);
-    notifyListeners();
-  }
-
-  void setProfessionalMode(bool value) {
-    _professionalMode = value;
-    prefs.setBool('professionalMode', value);
-    notifyListeners();
-  }
-
-  // Método para restablecer todas las configuraciones
-  void resetSettings() {
-    setThemeMode(ThemeMode.system);
-    setNotificationsEnabled(true);
-    setHapticFeedback(true);
-    setSelectedLanguage('Español');
-    setFontSize(1.0);
-    setProfessionalMode(false);
-  }
+// =============================================================
+// main() y MyApp
+// =============================================================
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    ChangeNotifierProvider(create: (_) => AppSettings(), child: const MyApp()),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -120,31 +157,84 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appSettings = Provider.of<AppSettings>(context);
+    return Consumer<AppSettings>(
+      builder: (context, settings, _) {
+        final seed = settings.seedColor;
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Calculadora Electrónica',
 
-    return MaterialApp(
-      title: 'Calculadora Electrónica',
-      debugShowCheckedModeBanner: false,
-      themeMode: appSettings.themeMode,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.grey[900],
-          foregroundColor: Colors.white,
-        ),
-      ),
-      home: const MainDashboardScreen(),
+          // Tema
+          themeMode: settings.themeMode,
+          theme: _buildTheme(Brightness.light, seed),
+          darkTheme: _buildTheme(Brightness.dark, seed),
+
+          // Idioma
+          locale: Locale(settings.selectedLanguage),
+          supportedLocales: const [Locale('es'), Locale('en')],
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+
+          // Escalado global de texto (evita el assert de TextStyle)
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(settings.fontSize)),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+
+          // Rutas y pantalla inicial (restaurado a tu Home)
+          routes: {'/settings': (_) => const SettingsScreen()},
+          home: const MainDashboardScreen(),
+        );
+      },
     );
   }
+}
+
+ThemeData _buildTheme(Brightness brightness, Color seed) {
+  final base = ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: brightness),
+  );
+
+  final cs = base.colorScheme;
+
+  return base.copyWith(
+    // Hacemos visible el color del tema en UI clave
+    appBarTheme: AppBarTheme(
+      backgroundColor: cs.primary,
+      foregroundColor: cs.onPrimary,
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: cs.primary,
+      foregroundColor: cs.onPrimary,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: cs.primary),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((_) => cs.primary),
+      trackColor: WidgetStateProperty.resolveWith(
+        (_) => cs.primary.withValues(alpha: 0.35),
+      ),
+    ),
+    sliderTheme: base.sliderTheme.copyWith(
+      activeTrackColor: cs.primary,
+      thumbColor: cs.primary,
+      overlayColor: cs.primary.withValues(alpha: 0.12),
+    ),
+  );
 }

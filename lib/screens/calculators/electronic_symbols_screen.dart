@@ -1,122 +1,144 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:calculadora_electronica/main.dart';
 
-class ElectronicSymbolsScreen extends StatelessWidget {
+/// Pantalla de símbolos electrónicos (sin ASCII).
+/// - Icons profesionales por componente.
+/// - Modo PRO visible (badge) y con detalles extra.
+/// - Grid móvil-first sin overflow (altura fija por celda).
+class ElectronicSymbolsScreen extends StatefulWidget {
   const ElectronicSymbolsScreen({super.key});
 
   @override
+  State<ElectronicSymbolsScreen> createState() =>
+      _ElectronicSymbolsScreenState();
+}
+
+class _ElectronicSymbolsScreenState extends State<ElectronicSymbolsScreen> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _query = '';
+  String _selectedCategory = 'Todos';
+  bool _compactView = false; // false = lista, true = grid
+
+  late final List<SymbolItem> _allItems = _buildCatalog();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final isPro = context.select<AppSettings, bool>((s) => s.professionalMode);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Símbolos Electrónicos'),
-        centerTitle: true,
-        backgroundColor: colorScheme.primaryContainer,
-        foregroundColor: colorScheme.onPrimaryContainer,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Símbolos Esquemáticos Comunes',
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+        actions: [
+          if (isPro)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFD8F4).withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFF9C27B0),
+                    width: 1.2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF9C27B0).withValues(alpha: 0.40),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.workspace_premium,
+                      size: 16,
+                      color: Color(0xFF9C27B0),
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      'PRO',
+                      style: TextStyle(
+                        color: Color(0xFF9C27B0),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            _buildSymbolCard(
-              context,
-              'Resistencia Fija',
-              'Representa un componente que opone una resistencia fija al paso de la corriente.',
-              ResistorSymbolPainter(),
+          Tooltip(
+            message: _compactView ? 'Vista lista' : 'Vista cuadrícula',
+            child: IconButton(
+              onPressed: () => setState(() => _compactView = !_compactView),
+              icon: Icon(_compactView ? Icons.view_agenda : Icons.grid_view),
             ),
-            _buildSymbolCard(
-              context,
-              'Capacitor Fijo (Polarizado)',
-              'Almacena energía en un campo eléctrico. La banda indica polaridad negativa.',
-              CapacitorPolarizedSymbolPainter(),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _SearchBar(
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() => _query = v),
+              onClear: () {
+                _searchCtrl.clear();
+                setState(() => _query = '');
+              },
             ),
-            _buildSymbolCard(
-              context,
-              'Capacitor Fijo (No Polarizado)',
-              'Almacena energía en un campo eléctrico. No tiene polaridad específica.',
-              CapacitorNonPolarizedSymbolPainter(),
+            const SizedBox(height: 4),
+            _CategoryChips(
+              categories: <String>{
+                'Todos',
+                ..._allItems.map((e) => e.category),
+              }.toList()..sort(),
+              selected: _selectedCategory,
+              onSelected: (c) => setState(() => _selectedCategory = c),
+              counts: isPro
+                  ? {
+                      for (final c in <String>{
+                        'Todos',
+                        ..._allItems.map((e) => e.category),
+                      }.toList())
+                        c: c == 'Todos'
+                            ? _allItems.length
+                            : _allItems.where((e) => e.category == c).length,
+                    }
+                  : null,
             ),
-            _buildSymbolCard(
-              context,
-              'Inductor',
-              'Almacena energía en un campo magnético, oponiéndose a cambios en la corriente.',
-              InductorSymbolPainter(),
-            ),
-            _buildSymbolCard(
-              context,
-              'Diodo',
-              'Permite el flujo de corriente en una sola dirección.',
-              DiodeSymbolPainter(),
-            ),
-            _buildSymbolCard(
-              context,
-              'LED (Diodo Emisor de Luz)',
-              'Diodo que emite luz cuando la corriente pasa a través de él.',
-              LEDSymbolPainter(),
-            ),
-            _buildSymbolCard(
-              context,
-              'Transistor NPN',
-              'Amplifica o conmuta señales electrónicas. La flecha indica la dirección de la corriente en el emisor.',
-              TransistorNPNBJT(),
-            ),
-            _buildSymbolCard(
-              context,
-              'Transistor PNP',
-              'Amplifica o conmuta señales electrónicas. La flecha indica la dirección de la corriente en el emisor.',
-              TransistorPNPBJT(),
-            ),
-            _buildSymbolCard(
-              context,
-              'Tierra (Ground)',
-              'Punto de referencia de potencial cero en un circuito.',
-              GroundSymbolPainter(),
-            ),
-            _buildSymbolCard(
-              context,
-              'Fuente de Voltaje DC',
-              'Suministra un voltaje constante de corriente continua.',
-              DCVoltageSourceSymbolPainter(),
-            ),
-            _buildSymbolCard(
-              context,
-              'Fuente de Voltaje AC',
-              'Suministra un voltaje alterno sinusoidal.',
-              ACVoltageSourceSymbolPainter(),
-            ),
-            _buildSymbolCard(
-              context,
-              'Interruptor (Switch)',
-              'Abre o cierra un circuito, permitiendo o interrumpiendo el flujo de corriente.',
-              SwitchSymbolPainter(),
-            ),
-            _buildSymbolCard(
-              context,
-              'Punto de Unión (Junction)',
-              'Indica una conexión eléctrica entre dos o más cables.',
-              JunctionSymbolPainter(),
-            ),
-            _buildSymbolCard(
-              context,
-              'Voltímetro',
-              'Mide la diferencia de potencial (voltaje) entre dos puntos en un circuito.',
-              VoltmeterSymbolPainter(),
-            ),
-            _buildSymbolCard(
-              context,
-              'Amperímetro',
-              'Mide la corriente eléctrica que fluye a través de un punto en un circuito.',
-              AmmeterSymbolPainter(),
+            const SizedBox(height: 8),
+            Expanded(
+              child: _SymbolsGrid(
+                items: _allItems.where((e) {
+                  final matchesCategory =
+                      _selectedCategory == 'Todos' ||
+                      e.category == _selectedCategory;
+                  final q = _query.trim().toLowerCase();
+                  final matchesQuery =
+                      q.isEmpty ||
+                      e.name.toLowerCase().contains(q) ||
+                      e.alias.any((a) => a.toLowerCase().contains(q)) ||
+                      e.description.toLowerCase().contains(q) ||
+                      e.standardsRef.toLowerCase().contains(q) ||
+                      e.typicalUse.toLowerCase().contains(q) ||
+                      e.category.toLowerCase().contains(q);
+                  return matchesCategory && matchesQuery;
+                }).toList(),
+                compact: _compactView,
+                proMode: isPro,
+              ),
             ),
           ],
         ),
@@ -124,527 +146,615 @@ class ElectronicSymbolsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSymbolCard(
-    BuildContext context,
-    String title,
-    String description,
-    CustomPainter painter,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+  List<SymbolItem> _buildCatalog() {
+    // Puedes ajustar/añadir componentes; intenta mantener nombres y categorías coherentes
+    return const [
+      // ACTIVOS
+      SymbolItem(
+        category: 'Activos',
+        name: 'Diodo',
+        icon: Icons.straight,
+        alias: ['Rectificador'],
+        description: 'Conduce en un solo sentido.',
+        standardsRef: 'IEC 60617-11-02 / ANSI Y32.2',
+        typicalUse: 'Rectificación, protección.',
+      ),
+      SymbolItem(
+        category: 'Activos',
+        name: 'LED',
+        icon: Icons.light_mode,
+        alias: ['Diodo emisor de luz'],
+        description: 'Emite luz al conducir.',
+        standardsRef: 'IEC 60617-11-16',
+        typicalUse: 'Indicadores, iluminación.',
+      ),
+      SymbolItem(
+        category: 'Activos',
+        name: 'Amplificador Operacional',
+        icon: Icons.graphic_eq,
+        alias: ['OpAmp', 'A.O.'],
+        description: 'Bloque analógico de alta ganancia.',
+        standardsRef: 'IEC 60617-13-12',
+        typicalUse: 'Filtros, comparadores.',
+      ),
 
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              title,
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: 100, // Tamaño fijo para el dibujo del símbolo
-              height: 80,
-              child: CustomPaint(painter: painter),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              description,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+      // FUENTES
+      SymbolItem(
+        category: 'Fuentes',
+        name: 'Fuente de DC',
+        icon: Icons.battery_charging_full,
+        alias: ['Batería'],
+        description: 'Suministro de tensión continua.',
+        standardsRef: 'IEC 60617-02-03',
+        typicalUse: 'Alimentación electrónica.',
+      ),
+      SymbolItem(
+        category: 'Fuentes',
+        name: 'Convertidor Buck',
+        icon: Icons.power,
+        alias: ['Step-Down'],
+        description: 'Reductor conmutado de tensión.',
+        standardsRef: 'Símbolo funcional',
+        typicalUse: 'Bajar 12→5 V.',
+      ),
+
+      // MEDICIÓN
+      SymbolItem(
+        category: 'Medición',
+        name: 'Voltímetro',
+        icon: Icons.flash_on,
+        alias: ['V-meter'],
+        description: 'Mide tensión eléctrica.',
+        standardsRef: 'IEC 60417-5007',
+        typicalUse: 'Pruebas y diagnóstico.',
+      ),
+
+      // SEMICONDUCTORES
+      SymbolItem(
+        category: 'Semiconductores',
+        name: 'Diodo Zener',
+        icon: Icons.timeline,
+        alias: ['Zener'],
+        description: 'Tensión de ruptura definida.',
+        standardsRef: 'IEC 60617-11-07',
+        typicalUse: 'Referencia/limitación de voltaje.',
+      ),
+
+      // LÓGICA
+      SymbolItem(
+        category: 'Lógica',
+        name: 'Puerta NOT',
+        icon: Icons.switch_left,
+        alias: ['Inversor'],
+        description: 'Invierte el nivel lógico.',
+        standardsRef: 'IEC 60617-12-21',
+        typicalUse: 'Buffers inversores.',
+      ),
+
+      // ELECTROMECÁNICOS
+      SymbolItem(
+        category: 'Electromecánicos',
+        name: 'Interruptor SPST',
+        icon: Icons.toggle_on,
+        alias: ['Switch'],
+        description: 'Un polo, una vía (ON/OFF).',
+        standardsRef: 'IEC 60617-07-01',
+        typicalUse: 'Conmutación básica.',
+      ),
+
+      // PASIVOS
+      SymbolItem(
+        category: 'Pasivos',
+        name: 'Resistencia',
+        icon: Icons.linear_scale,
+        alias: ['Resistor', 'R'],
+        description: 'Oposición al paso de corriente.',
+        standardsRef: 'IEC 60617-02-04',
+        typicalUse: 'Limitación y divisores.',
+      ),
+      SymbolItem(
+        category: 'Pasivos',
+        name: 'Capacitor',
+        icon: Icons.view_week,
+        alias: ['Condensador', 'C'],
+        description: 'Almacena energía eléctrica.',
+        standardsRef: 'IEC 60617-02-05',
+        typicalUse: 'Filtrado, acoplo.',
+      ),
+      SymbolItem(
+        category: 'Pasivos',
+        name: 'Inductor',
+        icon: Icons.waves,
+        alias: ['Bobina', 'L'],
+        description: 'Almacena energía en campo magnético.',
+        standardsRef: 'IEC 60617-02-06',
+        typicalUse: 'Filtros, convertidores.',
+      ),
+    ];
+  }
+}
+
+/* ---------- UI Aux ---------- */
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          hintText: 'Buscar símbolo, alias o uso…',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: controller.text.isEmpty
+              ? null
+              : IconButton(onPressed: onClear, icon: const Icon(Icons.clear)),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          filled: true,
         ),
       ),
     );
   }
 }
 
-// --- CLASES PARA DIBUJAR SÍMBOLOS ---
+class _CategoryChips extends StatelessWidget {
+  const _CategoryChips({
+    required this.categories,
+    required this.selected,
+    required this.onSelected,
+    this.counts,
+  });
 
-// Base para dibujar un símbolo
-abstract class BaseSymbolPainter extends CustomPainter {
-  final Paint _paint = Paint()
-    ..color = Colors
-        .black // Color por defecto para los dibujos
-    ..strokeWidth = 2.0
-    ..style = PaintingStyle.stroke
-    ..isAntiAlias = true;
+  final List<String> categories;
+  final String selected;
+  final ValueChanged<String> onSelected;
+  final Map<String, int>? counts;
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// Resistencia Fija
-class ResistorSymbolPainter extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Escalar para ajustar al tamaño del contenedor
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    final path = Path();
-    path.moveTo(0, 40);
-    path.lineTo(20, 40);
-    path.lineTo(27, 20);
-    path.lineTo(37, 60);
-    path.lineTo(47, 20);
-    path.lineTo(57, 60);
-    path.lineTo(67, 20);
-    path.lineTo(73, 40);
-    path.lineTo(100, 40);
-    canvas.drawPath(path, _paint);
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 46,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final c = categories[i];
+          final selectedNow = c == selected;
+          return ChoiceChip(
+            label: Text(counts == null ? c : '$c (${counts![c] ?? 0})'),
+            selected: selectedNow,
+            onSelected: (_) => onSelected(c),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            visualDensity: VisualDensity.compact,
+            side: BorderSide(
+              color: selectedNow ? scheme.primary : scheme.outlineVariant,
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 
-// Capacitor Fijo (Polarizado)
-class CapacitorPolarizedSymbolPainter extends BaseSymbolPainter {
+class _SymbolsGrid extends StatelessWidget {
+  const _SymbolsGrid({
+    required this.items,
+    required this.compact,
+    required this.proMode,
+  });
+
+  final List<SymbolItem> items;
+  final bool compact; // true => grid
+  final bool proMode;
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return const _EmptyState();
 
-    // Líneas de conexión
-    canvas.drawLine(const Offset(0, 40), const Offset(40, 40), _paint);
-    canvas.drawLine(const Offset(60, 40), const Offset(100, 40), _paint);
-
-    // Placas
-    canvas.drawLine(
-      const Offset(40, 15),
-      const Offset(40, 65),
-      _paint,
-    ); // Placa positiva
-    canvas.drawLine(
-      const Offset(60, 15),
-      const Offset(60, 65),
-      _paint,
-    ); // Placa negativa
-
-    // Símbolo de polaridad (+)
-    canvas.drawLine(const Offset(35, 30), const Offset(45, 30), _paint);
-    canvas.drawLine(const Offset(40, 25), const Offset(40, 35), _paint);
-  }
-}
-
-// Capacitor Fijo (No Polarizado)
-class CapacitorNonPolarizedSymbolPainter extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    // Líneas de conexión
-    canvas.drawLine(const Offset(0, 40), const Offset(40, 40), _paint);
-    canvas.drawLine(const Offset(60, 40), const Offset(100, 40), _paint);
-
-    // Placas
-    canvas.drawLine(const Offset(40, 15), const Offset(40, 65), _paint);
-    canvas.drawLine(const Offset(60, 15), const Offset(60, 65), _paint);
-  }
-}
-
-// Inductor
-class InductorSymbolPainter extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    final path = Path();
-    path.moveTo(0, 40);
-    path.lineTo(20, 40);
-    for (int i = 0; i < 4; i++) {
-      path.arcToPoint(
-        Offset(30.0 + i * 10, 40),
-        radius: const Radius.circular(5),
-        largeArc: false,
-        clockwise: false,
+    if (!compact) {
+      // LISTA
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        itemCount: items.length,
+        itemBuilder: (context, i) =>
+            _SymbolCard(item: items[i], dense: false, proMode: proMode),
       );
     }
-    path.lineTo(100, 40);
-    canvas.drawPath(path, _paint);
-  }
-}
 
-// Diodo
-class DiodeSymbolPainter extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
+    // GRID
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final cols = proMode
+            ? (w >= 1200
+                  ? 4
+                  : w >= 900
+                  ? 3
+                  : 2)
+            : 2;
 
-    // Líneas de conexión
-    canvas.drawLine(const Offset(0, 40), const Offset(40, 40), _paint);
-    canvas.drawLine(const Offset(60, 40), const Offset(100, 40), _paint);
+        // alturas móviles-first para asegurar que no haya overflow
+        final double cellHeight = w <= 380
+            ? (proMode ? 190 : 180)
+            : w <= 440
+            ? (proMode ? 200 : 190)
+            : (proMode ? 210 : 200);
 
-    // Triángulo (Ánodo)
-    final trianglePath = Path();
-    trianglePath.moveTo(40, 20);
-    trianglePath.lineTo(60, 40);
-    trianglePath.lineTo(40, 60);
-    trianglePath.close();
-    canvas.drawPath(trianglePath, _paint);
-
-    // Línea de Cátodo
-    canvas.drawLine(const Offset(60, 20), const Offset(60, 60), _paint);
-  }
-}
-
-// LED (Diodo Emisor de Luz)
-class LEDSymbolPainter extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    // Diodo base
-    canvas.drawLine(const Offset(0, 40), const Offset(40, 40), _paint);
-    canvas.drawLine(const Offset(60, 40), const Offset(100, 40), _paint);
-    final trianglePath = Path();
-    trianglePath.moveTo(40, 20);
-    trianglePath.lineTo(60, 40);
-    trianglePath.lineTo(40, 60);
-    trianglePath.close();
-    canvas.drawPath(trianglePath, _paint);
-    canvas.drawLine(const Offset(60, 20), const Offset(60, 60), _paint);
-
-    // Flechas de luz
-    final arrowPaint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke
-      ..isAntiAlias = true;
-
-    // Flecha 1
-    canvas.drawLine(const Offset(65, 30), const Offset(75, 20), arrowPaint);
-    canvas.drawLine(const Offset(75, 20), const Offset(70, 20), arrowPaint);
-    canvas.drawLine(const Offset(75, 20), const Offset(75, 25), arrowPaint);
-
-    // Flecha 2
-    canvas.drawLine(const Offset(70, 45), const Offset(80, 35), arrowPaint);
-    canvas.drawLine(const Offset(80, 35), const Offset(75, 35), arrowPaint);
-    canvas.drawLine(const Offset(80, 35), const Offset(80, 40), arrowPaint);
-  }
-}
-
-// Transistor NPN
-class TransistorNPNBJT extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    // Base (línea horizontal)
-    canvas.drawLine(const Offset(0, 40), const Offset(30, 40), _paint);
-
-    // Colecor (línea vertical superior)
-    canvas.drawLine(const Offset(50, 0), const Offset(50, 30), _paint);
-
-    // Emisor (línea vertical inferior con flecha)
-    canvas.drawLine(const Offset(50, 50), const Offset(50, 80), _paint);
-
-    // Círculo
-    canvas.drawCircle(const Offset(50, 40), 40, _paint);
-
-    // Conexión del colector a la base
-    canvas.drawLine(const Offset(50, 30), const Offset(30, 40), _paint);
-
-    // Conexión del emisor a la base (línea inclinada)
-    canvas.drawLine(const Offset(30, 40), const Offset(50, 50), _paint);
-
-    // Flecha del emisor (saliente para NPN)
-    final arrowPath = Path();
-    arrowPath.moveTo(50, 60); // Punto base de la flecha en el emisor
-    arrowPath.lineTo(45, 55); // Una punta
-    arrowPath.moveTo(50, 60);
-    arrowPath.lineTo(55, 55); // Otra punta
-    canvas.drawPath(arrowPath, _paint);
-  }
-}
-
-// Transistor PNP
-class TransistorPNPBJT extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    // Base (línea horizontal)
-    canvas.drawLine(const Offset(0, 40), const Offset(30, 40), _paint);
-
-    // Colecor (línea vertical superior)
-    canvas.drawLine(const Offset(50, 0), const Offset(50, 30), _paint);
-
-    // Emisor (línea vertical inferior con flecha)
-    canvas.drawLine(const Offset(50, 50), const Offset(50, 80), _paint);
-
-    // Círculo
-    canvas.drawCircle(const Offset(50, 40), 40, _paint);
-
-    // Conexión del colector a la base
-    canvas.drawLine(const Offset(50, 30), const Offset(30, 40), _paint);
-
-    // Conexión del emisor a la base (línea inclinada)
-    canvas.drawLine(const Offset(30, 40), const Offset(50, 50), _paint);
-
-    // Flecha del emisor (entrante para PNP)
-    final arrowPath = Path();
-    arrowPath.moveTo(45, 60); // Punta de la flecha
-    arrowPath.lineTo(50, 55); // Centro de la flecha
-    arrowPath.lineTo(55, 60); // Otra punta
-    arrowPath.close(); // Cierra el triángulo
-    _paint.style = PaintingStyle.fill; // Rellena la flecha
-    canvas.drawPath(arrowPath, _paint);
-    _paint.style =
-        PaintingStyle.stroke; // Vuelve a stroke para el resto del dibujo
-  }
-}
-
-// Símbolo de Tierra (Ground)
-class GroundSymbolPainter extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    canvas.drawLine(
-      const Offset(50, 0),
-      const Offset(50, 40),
-      _paint,
-    ); // Línea vertical
-    canvas.drawLine(
-      const Offset(25, 40),
-      const Offset(75, 40),
-      _paint,
-    ); // Línea más larga
-    canvas.drawLine(
-      const Offset(35, 50),
-      const Offset(65, 50),
-      _paint,
-    ); // Línea media
-    canvas.drawLine(
-      const Offset(45, 60),
-      const Offset(55, 60),
-      _paint,
-    ); // Línea corta
-  }
-}
-
-// Fuente de Voltaje DC
-class DCVoltageSourceSymbolPainter extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    canvas.drawLine(
-      const Offset(0, 40),
-      const Offset(30, 40),
-      _paint,
-    ); // Línea izquierda
-    canvas.drawLine(
-      const Offset(70, 40),
-      const Offset(100, 40),
-      _paint,
-    ); // Línea derecha
-
-    // Placa larga (+)
-    canvas.drawLine(const Offset(40, 20), const Offset(40, 60), _paint);
-    // Placa corta (-)
-    canvas.drawLine(const Offset(60, 30), const Offset(60, 50), _paint);
-
-    // Símbolo de polaridad (+)
-    canvas.drawLine(const Offset(35, 25), const Offset(45, 25), _paint);
-    canvas.drawLine(const Offset(40, 20), const Offset(40, 30), _paint);
-
-    // Símbolo de polaridad (-)
-    canvas.drawLine(const Offset(55, 35), const Offset(65, 35), _paint);
-  }
-}
-
-// Fuente de Voltaje AC
-class ACVoltageSourceSymbolPainter extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    canvas.drawLine(
-      const Offset(0, 40),
-      const Offset(20, 40),
-      _paint,
-    ); // Línea izquierda
-    canvas.drawLine(
-      const Offset(80, 40),
-      const Offset(100, 40),
-      _paint,
-    ); // Línea derecha
-
-    // Círculo
-    canvas.drawCircle(const Offset(50, 40), 30, _paint);
-
-    // Onda sinusoidal
-    final path = Path();
-    path.moveTo(30, 40); // Inicia en el borde izquierdo del círculo
-    path.arcToPoint(
-      const Offset(70, 40),
-      radius: const Radius.circular(20),
-      largeArc: true,
-      clockwise: false,
+        return GridView.builder(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cols,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            mainAxisExtent: cellHeight, // altura fija
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, i) =>
+              _SymbolCard(item: items[i], dense: true, proMode: proMode),
+        );
+      },
     );
-    canvas.drawPath(path, _paint);
   }
 }
 
-// Interruptor (Switch)
-class SwitchSymbolPainter extends BaseSymbolPainter {
+class _SymbolCard extends StatelessWidget {
+  const _SymbolCard({
+    required this.item,
+    required this.dense,
+    required this.proMode,
+  });
+
+  final SymbolItem item;
+  final bool dense; // grid=true
+  final bool proMode;
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
-    canvas.drawLine(
-      const Offset(0, 40),
-      const Offset(30, 40),
-      _paint,
-    ); // Línea izquierda
-    canvas.drawLine(
-      const Offset(70, 40),
-      const Offset(100, 40),
-      _paint,
-    ); // Línea derecha
+    final border = proMode
+        ? Border.all(color: scheme.primary, width: 1.25)
+        : Border.all(color: scheme.outlineVariant);
 
-    // Barra del interruptor
-    canvas.drawLine(
-      const Offset(30, 40),
-      const Offset(60, 20),
-      _paint,
-    ); // Posición abierta
-    canvas.drawCircle(
-      const Offset(30, 40),
-      3,
-      _paint..style = PaintingStyle.fill,
-    ); // Pivote
-    canvas.drawCircle(
-      const Offset(70, 40),
-      3,
-      _paint..style = PaintingStyle.fill,
-    ); // Contacto
-    _paint.style = PaintingStyle.stroke; // Reset style
-  }
-}
+    final bg = proMode ? scheme.surfaceContainerHigh : scheme.surface;
 
-// Punto de Unión (Junction)
-class JunctionSymbolPainter extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
+    final titleStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.2,
+    );
 
-    // Líneas
-    canvas.drawLine(const Offset(0, 40), const Offset(40, 40), _paint);
-    canvas.drawLine(const Offset(40, 40), const Offset(40, 0), _paint);
-    canvas.drawLine(const Offset(40, 40), const Offset(40, 80), _paint);
-    canvas.drawLine(const Offset(40, 40), const Offset(100, 40), _paint);
+    final subtitleMax = dense ? 1 : (proMode ? 2 : 3);
 
-    // Punto de unión (relleno)
-    _paint.style = PaintingStyle.fill;
-    canvas.drawCircle(const Offset(40, 40), 5, _paint);
-    _paint.style = PaintingStyle.stroke; // Reset style
-  }
-}
+    final Widget footer = dense
+        ? SizedBox(
+            height: 26,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: proMode
+                    ? [
+                        _ProPill(
+                          icon: Icons.rule_folder_outlined,
+                          label: 'Norma',
+                          value: item.standardsRef,
+                        ),
+                        const SizedBox(width: 6),
+                        _ProPill(
+                          icon: Icons.handyman_outlined,
+                          label: 'Uso',
+                          value: item.typicalUse,
+                        ),
+                      ]
+                    : [
+                        _Tag(item.category),
+                        const SizedBox(width: 6),
+                        ...item.alias
+                            .take(1)
+                            .map(
+                              (a) => Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: _Tag(a),
+                              ),
+                            ),
+                      ],
+              ),
+            ),
+          )
+        : Wrap(
+            spacing: 6,
+            runSpacing: dense ? -6 : 6,
+            children: proMode
+                ? [
+                    _ProPill(
+                      icon: Icons.rule_folder_outlined,
+                      label: 'Norma',
+                      value: item.standardsRef,
+                    ),
+                    _ProPill(
+                      icon: Icons.handyman_outlined,
+                      label: 'Uso',
+                      value: item.typicalUse,
+                    ),
+                    _ProPill(
+                      icon: Icons.category_outlined,
+                      label: 'Cat',
+                      value: item.category,
+                    ),
+                  ]
+                : [_Tag(item.category), ...item.alias.take(2).map(_Tag.new)],
+          );
 
-// Voltímetro
-class VoltmeterSymbolPainter extends BaseSymbolPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    // Círculo exterior
-    canvas.drawCircle(const Offset(50, 40), 30, _paint);
-
-    // Líneas de conexión
-    canvas.drawLine(const Offset(0, 40), const Offset(20, 40), _paint);
-    canvas.drawLine(const Offset(80, 40), const Offset(100, 40), _paint);
-
-    // Letra 'V' dentro del círculo
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'V',
-        style: TextStyle(
-          color: Colors.black,
-          fontSize:
-              30 / scaleY, // Ajusta el tamaño de la fuente para que se vea bien
-          fontWeight: FontWeight.bold,
+    return Material(
+      color: bg,
+      elevation: proMode ? 1.2 : 0,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showDetails(context),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: border,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(item.icon, size: dense ? 26 : 30, color: scheme.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: titleStyle,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: dense ? 6 : 8),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Icon(
+                    item.icon,
+                    size: dense ? 44 : 56,
+                    color: scheme.primary.withValues(alpha: 0.35),
+                  ),
+                ),
+              ),
+              SizedBox(height: dense ? 6 : 8),
+              Text(
+                item.description,
+                maxLines: subtitleMax,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              footer,
+            ],
+          ),
         ),
       ),
-      textDirection: TextDirection.ltr,
     );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(50 - textPainter.width / 2, 40 - textPainter.height / 2),
+  }
+
+  void _showDetails(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(item.icon, size: 28, color: scheme.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: Icon(
+                  item.icon,
+                  size: 72,
+                  color: scheme.primary.withValues(alpha: 0.75),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _DetailRow(label: 'Categoría', value: item.category),
+              _DetailRow(label: 'Alias', value: item.alias.join(', ')),
+              _DetailRow(label: 'Uso típico', value: item.typicalUse),
+              _DetailRow(label: 'Norma/Referencia', value: item.standardsRef),
+              const SizedBox(height: 12),
+              Text(item.description, style: theme.textTheme.bodyLarge),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
-// Amperímetro
-class AmmeterSymbolPainter extends BaseSymbolPainter {
+/* ---------- Chips / Pills ---------- */
+
+class _ProPill extends StatelessWidget {
+  const _ProPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 100;
-    final scaleY = size.height / 80;
-    canvas.scale(scaleX, scaleY);
-
-    // Círculo exterior
-    canvas.drawCircle(const Offset(50, 40), 30, _paint);
-
-    // Líneas de conexión
-    canvas.drawLine(const Offset(0, 40), const Offset(20, 40), _paint);
-    canvas.drawLine(const Offset(80, 40), const Offset(100, 40), _paint);
-
-    // Letra 'A' dentro del círculo
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'A',
-        style: TextStyle(
-          color: Colors.black,
-          fontSize: 30 / scaleY, // Ajusta el tamaño de la fuente
-          fontWeight: FontWeight.bold,
-        ),
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.35)),
       ),
-      textDirection: TextDirection.ltr,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: scheme.primary),
+          const SizedBox(width: 6),
+          Text(
+            '$label: ',
+            style: TextStyle(
+              color: scheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 180),
+            child: Text(value, overflow: TextOverflow.ellipsis, maxLines: 1),
+          ),
+        ],
+      ),
     );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(50 - textPainter.width / 2, 40 - textPainter.height / 2),
+  }
+}
+
+class _Tag extends StatelessWidget {
+  const _Tag(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        border: Border.all(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(text, overflow: TextOverflow.ellipsis),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 130,
+            child: Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(value, overflow: TextOverflow.ellipsis, maxLines: 2),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* ---------- Modelo ---------- */
+
+class SymbolItem {
+  final String category;
+  final String name;
+  final IconData icon;
+  final List<String> alias;
+  final String description;
+  final String standardsRef;
+  final String typicalUse;
+
+  const SymbolItem({
+    required this.category,
+    required this.name,
+    required this.icon,
+    required this.alias,
+    required this.description,
+    required this.standardsRef,
+    required this.typicalUse,
+  });
+}
+
+/* ---------- Estados vacíos ---------- */
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search_off, size: 42, color: theme.colorScheme.outline),
+          const SizedBox(height: 8),
+          Text('Sin resultados', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Prueba con otra palabra clave o cambia de categoría.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

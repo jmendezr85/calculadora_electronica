@@ -1,7 +1,9 @@
 // lib/screens/inductor_design_tool_screen.dart
 
 import 'package:flutter/material.dart';
-import 'dart:math'; // Para pi
+import 'dart:math' as math;
+import 'package:provider/provider.dart';
+import 'package:calculadora_electronica/main.dart'; // Asegúrate de que esta ruta sea correcta
 
 class InductorDesignToolScreen extends StatefulWidget {
   const InductorDesignToolScreen({super.key});
@@ -25,8 +27,12 @@ class _InductorDesignToolScreenState extends State<InductorDesignToolScreen> {
   final List<String> _inductanceUnits = ['nH', 'µH', 'mH', 'H'];
 
   String _result = '';
+  String _wireLengthResult = ''; // Nuevo resultado para la longitud del alambre
+
+  bool _useWheelerFormula = false; // Nuevo estado para la fórmula avanzada
+
   final double _mu0 =
-      4 * pi * pow(10, -7); // Permeabilidad del espacio libre (H/m)
+      4 * math.pi * math.pow(10, -7); // Permeabilidad del espacio libre (H/m)
 
   // --- Funciones de Conversión de Unidades ---
   double _convertLengthToMeters(double value, String unit) {
@@ -43,14 +49,28 @@ class _InductorDesignToolScreenState extends State<InductorDesignToolScreen> {
     }
   }
 
+  double _convertMetersToSelectedUnit(double value, String unit) {
+    switch (unit) {
+      case 'mm':
+        return value * 1000;
+      case 'cm':
+        return value * 100;
+      case 'inches':
+        return value / 0.0254;
+      case 'm':
+      default:
+        return value;
+    }
+  }
+
   double _convertInductanceToSelectedUnit(double henryValue, String unit) {
     switch (unit) {
       case 'nH':
-        return henryValue * pow(10, 9);
+        return henryValue * math.pow(10, 9);
       case 'µH':
-        return henryValue * pow(10, 6);
+        return henryValue * math.pow(10, 6);
       case 'mH':
-        return henryValue * pow(10, 3);
+        return henryValue * math.pow(10, 3);
       case 'H':
       default:
         return henryValue;
@@ -66,6 +86,7 @@ class _InductorDesignToolScreenState extends State<InductorDesignToolScreen> {
 
       if (turns <= 0 || rawDiameter <= 0 || rawLength <= 0) {
         _result = 'Ingrese valores válidos y positivos.';
+        _wireLengthResult = '';
         return;
       }
 
@@ -82,10 +103,30 @@ class _InductorDesignToolScreenState extends State<InductorDesignToolScreen> {
       // Calcular radio en metros
       final double radiusMeters = diameterMeters / 2;
 
-      // Fórmula para solenoide de núcleo de aire (en Henrys)
-      // L = (μ0 * N^2 * π * r^2) / l
-      final double inductanceHenry =
-          (_mu0 * pow(turns, 2) * pi * pow(radiusMeters, 2)) / lengthMeters;
+      double inductanceHenry;
+      if (_useWheelerFormula) {
+        // Fórmula de Wheeler para bobinas de una sola capa
+        // L(µH) = (r^2 * N^2) / (9r + 10l)
+        // La fórmula de Wheeler es empírica y la unidad es microhenrios directamente.
+        final double radiusInches = _convertMetersToSelectedUnit(
+          radiusMeters,
+          'inches',
+        );
+        final double lengthInches = _convertMetersToSelectedUnit(
+          lengthMeters,
+          'inches',
+        );
+        final double inductanceMicroHenry =
+            (math.pow(radiusInches, 2) * math.pow(turns, 2)) /
+            (9 * radiusInches + 10 * lengthInches);
+        inductanceHenry = inductanceMicroHenry / math.pow(10, 6);
+      } else {
+        // Fórmula para solenoide de núcleo de aire (en Henrys)
+        // L = (μ0 * N^2 * π * r^2) / l
+        inductanceHenry =
+            (_mu0 * math.pow(turns, 2) * math.pi * math.pow(radiusMeters, 2)) /
+            lengthMeters;
+      }
 
       // Convertir a la unidad de salida seleccionada
       final double finalInductance = _convertInductanceToSelectedUnit(
@@ -94,6 +135,25 @@ class _InductorDesignToolScreenState extends State<InductorDesignToolScreen> {
       );
 
       _result = '${finalInductance.toStringAsFixed(4)} $_inductanceUnit';
+
+      // Calcular la longitud del alambre
+      _calculateWireLength(turns, diameterMeters);
+    });
+  }
+
+  void _calculateWireLength(int turns, double diameterMeters) {
+    // La longitud de una vuelta es la circunferencia: C = pi * d
+    final double circumference = math.pi * diameterMeters;
+    final double totalLengthMeters = circumference * turns;
+
+    // Convertir a la unidad de longitud seleccionada (la misma que el diámetro)
+    final double finalLength = _convertMetersToSelectedUnit(
+      totalLengthMeters,
+      _diameterUnit,
+    );
+
+    setState(() {
+      _wireLengthResult = '${finalLength.toStringAsFixed(2)} $_diameterUnit';
     });
   }
 
@@ -106,6 +166,7 @@ class _InductorDesignToolScreenState extends State<InductorDesignToolScreen> {
       _lengthUnit = 'mm';
       _inductanceUnit = 'µH';
       _result = '';
+      _wireLengthResult = '';
     });
   }
 
@@ -120,6 +181,7 @@ class _InductorDesignToolScreenState extends State<InductorDesignToolScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final settings = Provider.of<AppSettings>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -199,6 +261,11 @@ class _InductorDesignToolScreenState extends State<InductorDesignToolScreen> {
               },
             ),
             const SizedBox(height: 20),
+            // Sección de Modo Profesional
+            if (settings.professionalMode) ...[
+              _buildProfessionalModeSection(colorScheme),
+              const SizedBox(height: 24),
+            ],
             ElevatedButton(
               onPressed: _calculateInductance,
               style: ElevatedButton.styleFrom(
@@ -245,6 +312,26 @@ class _InductorDesignToolScreenState extends State<InductorDesignToolScreen> {
                             ),
                       ),
                     ),
+                    if (settings.professionalMode &&
+                        _wireLengthResult.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Longitud del Alambre:',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Center(
+                        child: Text(
+                          _wireLengthResult,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleLarge!
+                              .copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.secondary,
+                              ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -320,6 +407,48 @@ class _InductorDesignToolScreenState extends State<InductorDesignToolScreen> {
           onChanged: onUnitChanged,
         ),
       ],
+    );
+  }
+
+  Widget _buildProfessionalModeSection(ColorScheme colorScheme) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Opciones de Modo Profesional',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                Icon(Icons.precision_manufacturing, color: colorScheme.primary),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text('Usar Fórmula de Wheeler (Precisa)'),
+              value: _useWheelerFormula,
+              onChanged: (bool value) {
+                setState(() {
+                  _useWheelerFormula = value;
+                  _calculateInductance(); // Recalcular con la nueva fórmula
+                });
+              },
+              secondary: const Icon(Icons.calculate),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

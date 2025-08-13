@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import 'package:calculadora_electronica/main.dart'; // Asegúrate de que esta ruta sea correcta
 
 class FrequencyConverter extends StatefulWidget {
   const FrequencyConverter({super.key});
@@ -23,7 +25,6 @@ class _FrequencyConverterState extends State<FrequencyConverter> {
   double _wavelength = 0.0;
   double _energy = 0.0;
   List<double> _harmonics = [];
-  bool _showAdvanced = false;
 
   // Constantes físicas
   final double _speedOfLight = 299792458.0; // m/s
@@ -160,36 +161,6 @@ class _FrequencyConverterState extends State<FrequencyConverter> {
                 ),
               ],
             ),
-            if (_showAdvanced) ...[
-              const SizedBox(height: 12),
-              TextField(
-                controller: _energyController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Energía (eV)',
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (_) => _convertEnergy(),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _medium,
-                items: _mediumSpeeds.keys
-                    .map(
-                      (medium) =>
-                          DropdownMenuItem(value: medium, child: Text(medium)),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() => _medium = value!);
-                  _convertFrequency();
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Medio de propagación',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -249,6 +220,79 @@ class _FrequencyConverterState extends State<FrequencyConverter> {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(value),
         ),
+      ],
+    );
+  }
+
+  Widget _buildProfessionalModeSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Opciones de Modo Profesional',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                Icon(
+                  Icons.precision_manufacturing,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            _buildAdvancedOptions(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdvancedOptions() {
+    return Column(
+      children: [
+        TextField(
+          controller: _energyController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Energía (eV)',
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (_) => _convertEnergy(),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          value: _medium,
+          items: _mediumSpeeds.keys
+              .map(
+                (medium) =>
+                    DropdownMenuItem(value: medium, child: Text(medium)),
+              )
+              .toList(),
+          onChanged: (value) {
+            setState(() => _medium = value!);
+            _convertFrequency();
+          },
+          decoration: const InputDecoration(
+            labelText: 'Medio de propagación',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 20),
+        _buildHarmonicsCard(),
+        const SizedBox(height: 20),
+        _buildSpectrumChart(),
+        const SizedBox(height: 20),
+        _buildBandTable(),
       ],
     );
   }
@@ -448,16 +492,12 @@ class _FrequencyConverterState extends State<FrequencyConverter> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<AppSettings>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Conversor de Frecuencias'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(_showAdvanced ? Icons.expand_less : Icons.expand_more),
-            onPressed: () => setState(() => _showAdvanced = !_showAdvanced),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -466,13 +506,9 @@ class _FrequencyConverterState extends State<FrequencyConverter> {
             _buildInputSection(),
             const SizedBox(height: 20),
             _buildResultCard(),
-            if (_showAdvanced) ...[
+            if (settings.professionalMode) ...[
               const SizedBox(height: 20),
-              _buildHarmonicsCard(),
-              const SizedBox(height: 20),
-              _buildSpectrumChart(),
-              const SizedBox(height: 20),
-              _buildBandTable(),
+              _buildProfessionalModeSection(),
             ],
             const SizedBox(height: 20),
             ElevatedButton(

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:calculadora_electronica/widgets/input_row_widget.dart';
+import 'package:calculadora_electronica/main.dart';
 import 'dart:math';
-import 'package:calculadora_electronica/widgets/input_row_widget.dart'; // Importa el nuevo widget
+import 'package:fl_chart/fl_chart.dart'; // Importa fl_chart para la gráfica
 
 class OhmLawScreen extends StatefulWidget {
   const OhmLawScreen({super.key});
@@ -15,19 +18,24 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
   final TextEditingController _resistanceController = TextEditingController();
   final TextEditingController _powerController = TextEditingController();
 
-  String _result = ''; // For general messages or errors
-
-  // Selected units for each parameter
   String _selectedVoltageUnit = 'V';
   String _selectedCurrentUnit = 'A';
   String _selectedResistanceUnit = 'Ω';
   String _selectedPowerUnit = 'W';
 
-  // Available units for each parameter
   final List<String> _voltageUnits = ['V', 'mV', 'kV'];
   final List<String> _currentUnits = ['A', 'mA', 'µA'];
   final List<String> _resistanceUnits = ['Ω', 'kΩ', 'MΩ'];
   final List<String> _powerUnits = ['W', 'mW', 'kW'];
+
+  String? _calculatedVoltage;
+  String? _calculatedCurrent;
+  String? _calculatedResistance;
+  String? _calculatedPower;
+  String _resultMessage = '';
+  final List<String> _formulasUsed = [];
+
+  List<BarChartGroupData> _chartData = [];
 
   @override
   void dispose() {
@@ -38,7 +46,6 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
     super.dispose();
   }
 
-  // Helper to convert input value to base unit (V, A, Ohm, W)
   double? _convertToBaseUnit(double? value, String unit) {
     if (value == null) return null;
     switch (unit) {
@@ -59,15 +66,14 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
       case 'kW':
         return value * 1000;
       default:
-        return value; // Base unit
+        return value;
     }
   }
 
-  // Helper to convert a base unit value to the selected display unit
   String _convertFromBaseUnit(double value, String targetUnit) {
     double displayValue = value;
+    String formattedValue;
 
-    // First, convert to the selected target unit
     switch (targetUnit) {
       case 'mV':
         displayValue = value * 1000;
@@ -95,108 +101,85 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
         break;
     }
 
-    // Then, format the number. Prefer fixed 3 decimals, or scientific for very small/large.
     if (displayValue.abs() >= 1000 ||
-        displayValue.abs() < 0.001 && displayValue != 0) {
-      return displayValue.toStringAsPrecision(
-        4,
-      ); // Use precision for large/small numbers
+        (displayValue.abs() < 0.001 && displayValue != 0)) {
+      formattedValue = displayValue.toStringAsPrecision(4);
+    } else {
+      formattedValue = displayValue.toStringAsFixed(3);
     }
-    return displayValue.toStringAsFixed(3); // Default fixed 3 decimals
+
+    return formattedValue;
   }
 
   void _calculateOhmLaw() {
     setState(() {
-      _result = ''; // Clear previous messages
+      _resultMessage = '';
+      _formulasUsed.clear();
+      _calculatedVoltage = null;
+      _calculatedCurrent = null;
+      _calculatedResistance = null;
+      _calculatedPower = null;
+      _chartData = [];
     });
 
-    // Get raw inputs from controllers
     double? rawVoltage = double.tryParse(_voltageController.text);
     double? rawCurrent = double.tryParse(_currentController.text);
     double? rawResistance = double.tryParse(_resistanceController.text);
     double? rawPower = double.tryParse(_powerController.text);
 
-    // Convert inputs to base units
     double? V = _convertToBaseUnit(rawVoltage, _selectedVoltageUnit);
     double? I = _convertToBaseUnit(rawCurrent, _selectedCurrentUnit);
     double? R = _convertToBaseUnit(rawResistance, _selectedResistanceUnit);
     double? P = _convertToBaseUnit(rawPower, _selectedPowerUnit);
 
-    // Track which fields are null (empty)
     List<double?> values = [V, I, R, P];
+    int filledCount = values.where((v) => v != null).length;
 
-    List<int> filledIndices = [];
-    List<int> emptyIndices = [];
-
-    for (int i = 0; i < values.length; i++) {
-      if (values[i] != null) {
-        filledIndices.add(i);
-      } else {
-        emptyIndices.add(i);
-      }
-    }
-
-    // Clear all output fields if less than 2 inputs or more than 2 inputs are present
-    if (filledIndices.length < 2 || filledIndices.length > 2) {
-      _clearCalculatedFields(
-        emptyIndices,
-      ); // Clear any previously calculated values
-      if (filledIndices.length < 2) {
-        setState(() {
-          _result = 'Ingresa al menos dos valores para calcular.';
-        });
-      } else {
-        // filledIndices.length > 2
-        setState(() {
-          _result =
-              'Por favor, deja solo dos campos con valores para calcular los demás.';
-        });
-      }
+    if (filledCount != 2) {
+      setState(() {
+        _resultMessage =
+            'Por favor, ingresa exactamente dos valores para calcular los demás.';
+      });
       return;
     }
 
-    // Exactly two fields are filled, proceed with calculation
-    _result = ''; // Clear any specific error messages
-
     try {
       if (V != null && I != null) {
-        // V, I given: Calculate R, P
         R = V / I;
         P = V * I;
+        _formulasUsed.add('R = V / I');
+        _formulasUsed.add('P = V * I');
       } else if (V != null && R != null) {
-        // V, R given: Calculate I, P
         I = V / R;
         P = (V * V) / R;
+        _formulasUsed.add('I = V / R');
+        _formulasUsed.add('P = V² / R');
       } else if (I != null && R != null) {
-        // I, R given: Calculate V, P
         V = I * R;
         P = (I * I) * R;
+        _formulasUsed.add('V = I * R');
+        _formulasUsed.add('P = I² * R');
       } else if (V != null && P != null) {
-        // V, P given: Calculate I, R
         I = P / V;
         R = (V * V) / P;
+        _formulasUsed.add('I = P / V');
+        _formulasUsed.add('R = V² / P');
       } else if (I != null && P != null) {
-        // I, P given: Calculate V, R
         V = P / I;
         R = P / (I * I);
+        _formulasUsed.add('V = P / I');
+        _formulasUsed.add('R = P / I²');
       } else if (R != null && P != null) {
-        // R, P given: Calculate V, I
         V = sqrt(P * R);
         I = sqrt(P / R);
-      } else {
-        // This case should ideally not be reached if filledIndices.length == 2
-        // But good for safety.
-        setState(() {
-          _result = 'Error de lógica en la selección de valores.';
-        });
-        return;
+        _formulasUsed.add('V = √ (P * R)');
+        _formulasUsed.add('I = √ (P / R)');
       }
 
-      // Handle division by zero or invalid calculations (e.g., sqrt of negative)
-      if (V.isNaN ||
-          I.isNaN ||
-          R.isNaN ||
-          P.isNaN ||
+      if (V!.isNaN ||
+          I!.isNaN ||
+          R!.isNaN ||
+          P!.isNaN ||
           V.isInfinite ||
           I.isInfinite ||
           R.isInfinite ||
@@ -206,47 +189,52 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
         );
       }
 
-      // Update controllers with calculated values, formatted to their selected units
-      if (emptyIndices.contains(0)) {
-        _voltageController.text = _convertFromBaseUnit(V, _selectedVoltageUnit);
-      }
-      if (emptyIndices.contains(1)) {
-        _currentController.text = _convertFromBaseUnit(I, _selectedCurrentUnit);
-      }
-      if (emptyIndices.contains(2)) {
-        _resistanceController.text = _convertFromBaseUnit(
-          R,
+      setState(() {
+        _calculatedVoltage = _convertFromBaseUnit(V!, _selectedVoltageUnit);
+        _calculatedCurrent = _convertFromBaseUnit(I!, _selectedCurrentUnit);
+        _calculatedResistance = _convertFromBaseUnit(
+          R!,
           _selectedResistanceUnit,
         );
-      }
-      if (emptyIndices.contains(3)) {
-        _powerController.text = _convertFromBaseUnit(P, _selectedPowerUnit);
-      }
+        _calculatedPower = _convertFromBaseUnit(P!, _selectedPowerUnit);
+
+        _chartData = _createChartData(V, I, R, P);
+      });
     } on FormatException catch (e) {
       setState(() {
-        _result = 'Error: ${e.message}';
+        _resultMessage = 'Error: ${e.message}';
       });
-      _clearCalculatedFields(emptyIndices); // Clear outputs on error
     } catch (e) {
       setState(() {
-        _result = 'Ocurrió un error inesperado. Revisa las entradas.';
+        _resultMessage = 'Ocurrió un error inesperado. Revisa las entradas.';
       });
-      _clearCalculatedFields(emptyIndices); // Clear outputs on error
     }
-
-    setState(() {}); // Rebuild UI to show results/messages
   }
 
-  void _clearCalculatedFields(List<int> emptyIndices) {
-    List<TextEditingController> controllers = [
-      _voltageController,
-      _currentController,
-      _resistanceController,
-      _powerController,
+  List<BarChartGroupData> _createChartData(
+    double v,
+    double i,
+    double r,
+    double p,
+  ) {
+    return [
+      BarChartGroupData(
+        x: 0,
+        barRods: [BarChartRodData(toY: v, color: Colors.blue)],
+      ),
+      BarChartGroupData(
+        x: 1,
+        barRods: [BarChartRodData(toY: i, color: Colors.green)],
+      ),
+      BarChartGroupData(
+        x: 2,
+        barRods: [BarChartRodData(toY: r, color: Colors.orange)],
+      ),
+      BarChartGroupData(
+        x: 3,
+        barRods: [BarChartRodData(toY: p, color: Colors.purple)],
+      ),
     ];
-    for (int index in emptyIndices) {
-      controllers[index].clear();
-    }
   }
 
   void _clearAllFields() {
@@ -255,7 +243,13 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
     _resistanceController.clear();
     _powerController.clear();
     setState(() {
-      _result = '';
+      _resultMessage = '';
+      _formulasUsed.clear();
+      _calculatedVoltage = null;
+      _calculatedCurrent = null;
+      _calculatedResistance = null;
+      _calculatedPower = null;
+      _chartData = [];
       _selectedVoltageUnit = 'V';
       _selectedCurrentUnit = 'A';
       _selectedResistanceUnit = 'Ω';
@@ -265,20 +259,59 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final settings = Provider.of<AppSettings>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ley de Ohm y Potencia'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: colorScheme.primaryContainer,
+        foregroundColor: colorScheme.onPrimaryContainer,
         centerTitle: true,
+        actions: [
+          if (settings.professionalMode)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8.0,
+                vertical: 8.0,
+              ),
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.secondaryContainer,
+                  foregroundColor: colorScheme.onSecondaryContainer,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.star,
+                      size: 18,
+                      color: colorScheme.onSecondaryContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'PRO',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Usamos el nuevo widget InputRowWidget
             InputRowWidget(
-              icon: Icons.power_outlined, // Icon for Voltage
+              icon: Icons.power_outlined,
               labelText: 'Voltaje',
               controller: _voltageController,
               selectedUnit: _selectedVoltageUnit,
@@ -287,11 +320,11 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
                 setState(() {
                   _selectedVoltageUnit = newValue!;
                 });
-                _calculateOhmLaw(); // Recalculate if unit changes
               },
             ),
+            const SizedBox(height: 15),
             InputRowWidget(
-              icon: Icons.electrical_services_outlined, // Icon for Current
+              icon: Icons.electric_bolt,
               labelText: 'Corriente',
               controller: _currentController,
               selectedUnit: _selectedCurrentUnit,
@@ -300,12 +333,11 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
                 setState(() {
                   _selectedCurrentUnit = newValue!;
                 });
-                _calculateOhmLaw(); // Recalculate if unit changes
               },
             ),
+            const SizedBox(height: 15),
             InputRowWidget(
-              icon:
-                  Icons.clear_all, // Icon for Resistance (looks like a zig-zag)
+              icon: Icons.clear_all,
               labelText: 'Resistencia',
               controller: _resistanceController,
               selectedUnit: _selectedResistanceUnit,
@@ -314,11 +346,11 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
                 setState(() {
                   _selectedResistanceUnit = newValue!;
                 });
-                _calculateOhmLaw(); // Recalculate if unit changes
               },
             ),
+            const SizedBox(height: 15),
             InputRowWidget(
-              icon: Icons.speed, // Icon for Power
+              icon: Icons.speed,
               labelText: 'Potencia',
               controller: _powerController,
               selectedUnit: _selectedPowerUnit,
@@ -327,49 +359,153 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
                 setState(() {
                   _selectedPowerUnit = newValue!;
                 });
-                _calculateOhmLaw(); // Recalculate if unit changes
               },
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _calculateOhmLaw,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Calcular', style: TextStyle(fontSize: 18)),
+              child: const Text('Calcular'),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: _clearAllFields,
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Limpiar', style: TextStyle(fontSize: 18)),
+              child: const Text('Limpiar'),
             ),
             const SizedBox(height: 24),
-            if (_result.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
+            if (_resultMessage.isNotEmpty)
+              _buildMessageCard(_resultMessage, colorScheme),
+            if (_calculatedVoltage != null)
+              _buildResultCard(colorScheme, settings.professionalMode),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessageCard(String message, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        message,
+        style: TextStyle(
+          fontSize: 16,
+          color: colorScheme.onErrorContainer,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildResultCard(ColorScheme colorScheme, bool isProfessionalMode) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.calculate, color: colorScheme.primary),
+                const SizedBox(width: 10),
+                Text(
+                  'Resultados del Cálculo',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(color: colorScheme.primary),
                 ),
-                child: Text(
-                  _result,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(context).colorScheme.onErrorContainer,
-                    fontWeight: FontWeight.bold,
+              ],
+            ),
+            const Divider(height: 24),
+            Text(
+              'Voltaje: ${_calculatedVoltage ?? 'N/A'} $_selectedVoltageUnit',
+            ),
+            Text(
+              'Corriente: ${_calculatedCurrent ?? 'N/A'} $_selectedCurrentUnit',
+            ),
+            Text(
+              'Resistencia: ${_calculatedResistance ?? 'N/A'} $_selectedResistanceUnit',
+            ),
+            Text('Potencia: ${_calculatedPower ?? 'N/A'} $_selectedPowerUnit'),
+            if (isProfessionalMode) ...[
+              const SizedBox(height: 24),
+              Text(
+                'Análisis Gráfico',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 200,
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: _chartData.isNotEmpty
+                        ? _chartData
+                                  .map((e) => e.barRods.first.toY)
+                                  .reduce((a, b) => a > b ? a : b) *
+                              1.2
+                        : 10,
+                    barGroups: _chartData,
+                    borderData: FlBorderData(
+                      show: true,
+                      border: Border.all(color: Colors.grey, width: 0.5),
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            const labels = ['V', 'I', 'R', 'P'];
+                            return Text(
+                              labels[value.toInt()],
+                              style: const TextStyle(fontSize: 10),
+                            );
+                          },
+                        ),
+                      ),
+                      leftTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                    ),
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
+              const SizedBox(height: 24),
+              ExpansionTile(
+                title: const Text(
+                  'Fórmulas Utilizadas',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                leading: Icon(Icons.code, color: colorScheme.secondary),
+                children: _formulasUsed
+                    .map(
+                      (formula) => Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 4.0,
+                          horizontal: 16.0,
+                        ),
+                        child: Text(
+                          formula,
+                          style: const TextStyle(fontFamily: 'monospace'),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
           ],
         ),
       ),

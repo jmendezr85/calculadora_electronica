@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import 'package:calculadora_electronica/main.dart';
 
 class FilterCalculatorScreen extends StatefulWidget {
   const FilterCalculatorScreen({super.key});
@@ -24,6 +26,10 @@ class _FilterCalculatorScreenState extends State<FilterCalculatorScreen> {
 
   FilterType _filterType = FilterType.lowPass;
   FilterConfig _filterConfig = FilterConfig.rc;
+
+  // New state variables for professional mode
+  double _qFactor = 0.707;
+  bool _showQFactor = false;
 
   double _cutoffFrequency = 0.0;
   String _result = '';
@@ -141,8 +147,6 @@ class _FilterCalculatorScreenState extends State<FilterCalculatorScreen> {
     });
   }
 
-  // ... (resto de métodos se mantienen igual)
-
   double _convertResistance(double value, String unit) {
     switch (unit) {
       case 'kΩ':
@@ -182,6 +186,8 @@ class _FilterCalculatorScreenState extends State<FilterCalculatorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<AppSettings>(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Calculadora de Filtros')),
       body: SingleChildScrollView(
@@ -190,9 +196,9 @@ class _FilterCalculatorScreenState extends State<FilterCalculatorScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildFilterTypeSelector(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _buildFilterConfigSelector(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             if (_filterConfig == FilterConfig.rc) ...[
               _buildInputRow(
                 'Resistencia (R)',
@@ -202,6 +208,7 @@ class _FilterCalculatorScreenState extends State<FilterCalculatorScreen> {
                 (value) => setState(() => _selectedResistanceUnit = value!),
                 _resistanceErrorText,
               ),
+              const SizedBox(height: 8),
               _buildInputRow(
                 'Capacitancia (C)',
                 _capacitanceController,
@@ -219,6 +226,7 @@ class _FilterCalculatorScreenState extends State<FilterCalculatorScreen> {
                 (value) => setState(() => _selectedInductanceUnit = value!),
                 _inductanceErrorText,
               ),
+              const SizedBox(height: 8),
               _buildInputRow(
                 'Capacitancia (C)',
                 _capacitanceController,
@@ -226,6 +234,20 @@ class _FilterCalculatorScreenState extends State<FilterCalculatorScreen> {
                 ['pF', 'nF', 'µF', 'mF'],
                 (value) => setState(() => _selectedCapacitanceUnit = value!),
                 _capacitanceErrorText,
+              ),
+            ],
+            // 🚨 Sección de modo profesional con nuevo estilo 🚨
+            if (settings.professionalMode) ...[
+              const SizedBox(height: 24),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildProfessionalModeSection(),
+                ),
               ),
             ],
             const SizedBox(height: 20),
@@ -316,6 +338,67 @@ class _FilterCalculatorScreenState extends State<FilterCalculatorScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // New method to build the professional mode section
+  Widget _buildProfessionalModeSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Opciones de Modo Profesional',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            Icon(
+              Icons.precision_manufacturing,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SwitchListTile(
+          title: const Text('Mostrar Factor de Calidad (Q)'),
+          value: _showQFactor,
+          onChanged: (bool value) {
+            setState(() {
+              _showQFactor = value;
+            });
+          },
+          secondary: const Icon(Icons.speed),
+        ),
+        if (_showQFactor)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Factor Q: ${_qFactor.toStringAsFixed(3)}',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                Slider(
+                  value: _qFactor,
+                  min: 0.1,
+                  max: 10.0,
+                  divisions: 99,
+                  label: _qFactor.toStringAsFixed(2),
+                  onChanged: (double value) {
+                    setState(() {
+                      _qFactor = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
