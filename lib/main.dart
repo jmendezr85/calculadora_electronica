@@ -29,16 +29,20 @@ class AppSettings extends ChangeNotifier {
   }
 
   Future<void> _init() async {
-    _prefs = await SharedPreferences.getInstance();
+    try {
+      _prefs = await SharedPreferences.getInstance();
 
-    _themeMode =
-        ThemeMode.values[_prefs.getInt('themeMode') ?? ThemeMode.system.index];
-    _fontSize = _prefs.getDouble('fontSize') ?? 1.0;
-    _professionalMode = _prefs.getBool('professionalMode') ?? false;
-    _hapticFeedback = _prefs.getBool('hapticFeedback') ?? true;
-    _selectedLanguage = _prefs.getString('selectedLanguage') ?? 'es';
-    _seedColorValue = _prefs.getInt('seedColor') ?? 0xFF1867FF;
-
+      _themeMode = ThemeMode
+          .values[_prefs.getInt('themeMode') ?? ThemeMode.system.index];
+      _fontSize = _prefs.getDouble('fontSize') ?? 1.0;
+      _professionalMode = _prefs.getBool('professionalMode') ?? false;
+      _hapticFeedback = _prefs.getBool('hapticFeedback') ?? true;
+      _selectedLanguage = _prefs.getString('selectedLanguage') ?? 'es';
+      _seedColorValue = _prefs.getInt('seedColor') ?? 0xFF1867FF;
+    } catch (e, st) {
+      // Si algo falla, deja valores por defecto y registra el error.
+      debugPrint('AppSettings init error: $e\n$st');
+    }
     _ready = true;
     notifyListeners();
   }
@@ -56,9 +60,8 @@ class AppSettings extends ChangeNotifier {
   // Getter Color semilla (como Color)
   Color get seedColor => Color(_seedColorValue);
 
-  // Setter evitando deprecations (usa canales normalizados .a/.r/.g/.b)
+  // Setter compatible con nuevos canales (.a/.r/.g/.b: 0..1)
   void setSeedColor(Color c) {
-    // .a/.r/.g/.b son double 0..1 en tu SDK -> conviértelo a 0..255
     final a = (c.a * 255.0).round() & 0xff;
     final r = (c.r * 255.0).round() & 0xff;
     final g = (c.g * 255.0).round() & 0xff;
@@ -85,7 +88,6 @@ class AppSettings extends ChangeNotifier {
   ];
 
   // ==================== Tipografía ====================
-  // Alias compatible con tu pantalla de ajustes: textScale
   double get textScale => _fontSize;
   void setTextScale(double v) => setFontSize(v);
 
@@ -147,6 +149,14 @@ class AppSettings extends ChangeNotifier {
 // =============================================================
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Si algo revienta en el primer frame, lo verás en la consola.
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('Flutter error: ${details.exceptionAsString()}');
+    if (details.stack != null) debugPrint(details.stack.toString());
+  };
+
   runApp(
     ChangeNotifierProvider(create: (_) => AppSettings(), child: const MyApp()),
   );
@@ -160,6 +170,7 @@ class MyApp extends StatelessWidget {
     return Consumer<AppSettings>(
       builder: (context, settings, _) {
         final seed = settings.seedColor;
+
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Calculadora Electrónica',
@@ -189,11 +200,37 @@ class MyApp extends StatelessWidget {
             );
           },
 
-          // Rutas y pantalla inicial (restaurado a tu Home)
+          // Rutas
           routes: {'/settings': (_) => const SettingsScreen()},
-          home: const MainDashboardScreen(),
+
+          // MOSTRAR Splash mientras AppSettings termina de cargar
+          home: settings.isReady
+              ? const MainDashboardScreen()
+              : const _BootSplash(),
         );
       },
+    );
+  }
+}
+
+class _BootSplash extends StatelessWidget {
+  const _BootSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Scaffold(
+      backgroundColor: cs.surface,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: cs.primary),
+            const SizedBox(height: 12),
+            Text('Iniciando…', style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -207,7 +244,6 @@ ThemeData _buildTheme(Brightness brightness, Color seed) {
   final cs = base.colorScheme;
 
   return base.copyWith(
-    // Hacemos visible el color del tema en UI clave
     appBarTheme: AppBarTheme(
       backgroundColor: cs.primary,
       foregroundColor: cs.onPrimary,

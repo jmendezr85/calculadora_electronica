@@ -203,79 +203,111 @@ class CalculatorsListScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Calculadoras Electrónicas'),
-        backgroundColor: colorScheme.primaryContainer,
-        foregroundColor: colorScheme.onPrimaryContainer,
-        centerTitle: true,
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: calculators.length,
-        itemBuilder: (context, index) {
-          final calculator = calculators[index];
-          return Container(
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colorScheme.primary.withAlpha((255 * 0.5).round()),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withAlpha((255 * 0.2).round()),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            color: colorScheme.primary, // Usa el color primario del tema
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
             ),
-            child: InkWell(
-              onTap: () {
-                if (calculator['screen'] != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => calculator['screen']!,
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Image.asset(
+                    'assets/branding/logo_calcuvolt.png',
+                    height: 30,
+                    color: colorScheme
+                        .onPrimary, // Ajusta el color del logo al color del tema
+                  ),
+                  const SizedBox(width: 8.0),
+                  Text(
+                    'Calculadoras Electrónicas',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme
+                          .onPrimary, // Ajusta el color del texto al color del tema
                     ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'La calculadora "${calculator['name']}" aún no está implementada.',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: calculators.length,
+              itemBuilder: (context, index) {
+                final calculator = calculators[index];
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.primary.withAlpha((255 * 0.5).round()),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withAlpha((255 * 0.2).round()),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      if (calculator['screen'] != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => calculator['screen']!,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'La calculadora "${calculator['name']}" aún no está implementada.',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Icon(
+                            calculator['icon'] as IconData,
+                            color: calculator['color'] as Color?,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              calculator['name'],
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                }
+                  ),
+                );
               },
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Icon(
-                      calculator['icon'] as IconData,
-                      color: calculator['color'] as Color?,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        calculator['name'],
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-              ),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

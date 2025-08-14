@@ -33,7 +33,6 @@ class PinoutsListScreen extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Lista de pin-outs con su nombre, la ruta de la imagen, descripción y el icono específico
-    // NOTA: Para el 'Puerto USB', los detalles ya no se necesitan aquí, se manejan en PinoutDetailScreen.
     final List<Map<String, dynamic>> pinouts = [
       {
         'name': 'Puerto USB',
@@ -217,10 +216,23 @@ class PinoutsListScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PIN-OUTS'),
-        backgroundColor: colorScheme.primaryContainer,
-        foregroundColor: colorScheme.onPrimaryContainer,
-        centerTitle: true,
+        // Usa el color primario del tema para el fondo
+        backgroundColor: colorScheme.primary,
+        // Usa el color `onPrimary` para los iconos y el texto
+        foregroundColor: colorScheme.onPrimary,
+        title: Row(
+          children: [
+            // Agrega el logo
+            Image.asset(
+              'assets/branding/logo_calcuvolt.png',
+              height: 30, // Tamaño del logo
+              color: colorScheme.onPrimary, // Color del logo
+            ),
+            const SizedBox(width: 8.0), // Espacio entre el logo y el texto
+            // Título de la pantalla
+            const Text('Pin-Outs'),
+          ],
+        ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16.0),

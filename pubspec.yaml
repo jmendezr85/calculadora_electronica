@@ -40,3 +40,9 @@ flutter:
     - assets/images/regulators/linear/lm317_circuit.png
     - assets/images/pinouts/ # <--- ¡IMPORTANTE! Para las imágenes de pin-outs
     - assets/lang/
+    - assets/branding/ # <--- Línea agregada para los logos
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/branding/logo_calcuvolt.png" # Ruta a tu logo principal
