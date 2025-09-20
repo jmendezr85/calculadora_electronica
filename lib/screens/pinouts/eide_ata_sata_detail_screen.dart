@@ -1,6 +1,6 @@
 // lib/screens/pinouts/eide_ata_sata_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 const String _eideSataTitle = 'Conectores EIDE/ATA y SATA (Almacenamiento)';
 const String _eideSataImagePath =
@@ -208,8 +208,8 @@ class EideAtaSataDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _eideSataImagePath,
                         title:
                             _eideSataTitle, // Pasa el título para la pantalla de zoom
@@ -283,7 +283,7 @@ class EideAtaSataDetailScreen extends StatelessWidget {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(
+                                MaterialPageRoute<void>(
                                   builder: (context) => ImageViewerScreen(
                                     imagePath: section['image_pinout']!,
                                     title:
@@ -470,7 +470,7 @@ class EideAtaSataDetailScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => ImageViewerScreen(
                                 imagePath: item['image_pinout']!,
                                 title:

@@ -301,7 +301,7 @@ class XlrDmxDetailScreen extends StatelessWidget {
   void _showFullScreenImage(BuildContext context, String imagePath) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (context) => Scaffold(
           backgroundColor: Colors.black,
           appBar: AppBar(

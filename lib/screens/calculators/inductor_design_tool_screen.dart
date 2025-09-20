@@ -1,9 +1,10 @@
 // lib/screens/inductor_design_tool_screen.dart
 
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:provider/provider.dart';
+
 import 'package:calculadora_electronica/main.dart'; // Asegúrate de que esta ruta sea correcta
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class InductorDesignToolScreen extends StatefulWidget {
   const InductorDesignToolScreen({super.key});

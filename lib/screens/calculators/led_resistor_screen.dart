@@ -1,6 +1,6 @@
+import 'package:calculadora_electronica/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:calculadora_electronica/main.dart';
 
 class LedResistorScreen extends StatefulWidget {
   const LedResistorScreen({super.key});
@@ -144,7 +144,7 @@ class _LedResistorScreenState extends State<LedResistorScreen> {
       }
       final candidates = [value * magnitude, value * magnitude / 10];
       for (var candidate in candidates) {
-        double difference = (requiredResistance / candidate - 1).abs();
+        final double difference = (requiredResistance / candidate - 1).abs();
         if (difference < lowestDifference) {
           lowestDifference = difference;
           nearestValue = candidate;

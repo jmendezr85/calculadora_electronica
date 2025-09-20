@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
 
 enum RegulatorCategory { linear, switching }
 
@@ -471,7 +472,6 @@ Resultados (${_getSwitchingRegulatorName(_selectedSwitchingRegulator)}):
           ),
           if (units.length > 1)
             Expanded(
-              flex: 1,
               child: Padding(
                 padding: const EdgeInsets.only(left: 8.0),
                 child: DropdownButton<String>(

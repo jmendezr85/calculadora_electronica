@@ -1,8 +1,21 @@
-import 'package:flutter/material.dart';
-
+import 'package:calculadora_electronica/screens/calculators/adc_calculator_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/battery_life_calculator_screen.dart';
 // Importa todas tus pantallas de calculadoras aquí
 import 'package:calculadora_electronica/screens/calculators/capacitor_calculator_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/decibel_calculator_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/electronic_symbols_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/filter_calculator_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/frequency_converter.dart';
+import 'package:calculadora_electronica/screens/calculators/inductive_reactance_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/inductor_color_code_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/inductor_design_tool_screen.dart';
 import 'package:calculadora_electronica/screens/calculators/led_resistor_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/ne555_calculator_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/ohm_law_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/opamp_calculator_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/pcb_trace_width_calculator_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/power_calculator_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/power_dissipation_calculator.dart';
 import 'package:calculadora_electronica/screens/calculators/rc_circuit_simulator_screen.dart';
 import 'package:calculadora_electronica/screens/calculators/resistor_color_code_screen.dart';
 import 'package:calculadora_electronica/screens/calculators/resistor_color_table_screen.dart';
@@ -10,24 +23,10 @@ import 'package:calculadora_electronica/screens/calculators/resistor_series_para
 import 'package:calculadora_electronica/screens/calculators/smd_calculator_screen.dart';
 import 'package:calculadora_electronica/screens/calculators/unit_converter_screen.dart';
 import 'package:calculadora_electronica/screens/calculators/voltage_divider_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/ohm_law_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/inductor_color_code_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/zener_diode_code_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/decibel_calculator_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/inductive_reactance_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/filter_calculator_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/opamp_calculator_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/voltage_regulator_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/ne555_calculator_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/battery_life_calculator_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/power_dissipation_calculator.dart';
-import 'package:calculadora_electronica/screens/calculators/inductor_design_tool_screen.dart';
 import 'package:calculadora_electronica/screens/calculators/voltage_drop_calculator.dart';
-import 'package:calculadora_electronica/screens/calculators/pcb_trace_width_calculator_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/power_calculator_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/frequency_converter.dart';
-import 'package:calculadora_electronica/screens/calculators/adc_calculator_screen.dart';
-import 'package:calculadora_electronica/screens/calculators/electronic_symbols_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/voltage_regulator_screen.dart';
+import 'package:calculadora_electronica/screens/calculators/zener_diode_code_screen.dart';
+import 'package:flutter/material.dart';
 
 class CalculatorsListScreen extends StatelessWidget {
   const CalculatorsListScreen({super.key});
@@ -264,7 +263,7 @@ class CalculatorsListScreen extends StatelessWidget {
                       if (calculator['screen'] != null) {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          MaterialPageRoute<void>(
                             builder: (context) => calculator['screen']!,
                           ),
                         );

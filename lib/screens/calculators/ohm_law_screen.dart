@@ -1,9 +1,10 @@
+import 'dart:math';
+
+import 'package:calculadora_electronica/main.dart';
+import 'package:calculadora_electronica/widgets/input_row_widget.dart';
+import 'package:fl_chart/fl_chart.dart'; // Importa fl_chart para la gráfica
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:calculadora_electronica/widgets/input_row_widget.dart';
-import 'package:calculadora_electronica/main.dart';
-import 'dart:math';
-import 'package:fl_chart/fl_chart.dart'; // Importa fl_chart para la gráfica
 
 class OhmLawScreen extends StatefulWidget {
   const OhmLawScreen({super.key});
@@ -122,18 +123,18 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
       _chartData = [];
     });
 
-    double? rawVoltage = double.tryParse(_voltageController.text);
-    double? rawCurrent = double.tryParse(_currentController.text);
-    double? rawResistance = double.tryParse(_resistanceController.text);
-    double? rawPower = double.tryParse(_powerController.text);
+    final double? rawVoltage = double.tryParse(_voltageController.text);
+    final double? rawCurrent = double.tryParse(_currentController.text);
+    final double? rawResistance = double.tryParse(_resistanceController.text);
+    final double? rawPower = double.tryParse(_powerController.text);
 
     double? V = _convertToBaseUnit(rawVoltage, _selectedVoltageUnit);
     double? I = _convertToBaseUnit(rawCurrent, _selectedCurrentUnit);
     double? R = _convertToBaseUnit(rawResistance, _selectedResistanceUnit);
     double? P = _convertToBaseUnit(rawPower, _selectedPowerUnit);
 
-    List<double?> values = [V, I, R, P];
-    int filledCount = values.where((v) => v != null).length;
+    final List<double?> values = [V, I, R, P];
+    final int filledCount = values.where((v) => v != null).length;
 
     if (filledCount != 2) {
       setState(() {
@@ -147,33 +148,27 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
       if (V != null && I != null) {
         R = V / I;
         P = V * I;
-        _formulasUsed.add('R = V / I');
-        _formulasUsed.add('P = V * I');
+        _formulasUsed.addAll(['R = V / I', 'P = V * I']);
       } else if (V != null && R != null) {
         I = V / R;
         P = (V * V) / R;
-        _formulasUsed.add('I = V / R');
-        _formulasUsed.add('P = V² / R');
+        _formulasUsed.addAll(['I = V / R', 'P = V² / R']);
       } else if (I != null && R != null) {
         V = I * R;
         P = (I * I) * R;
-        _formulasUsed.add('V = I * R');
-        _formulasUsed.add('P = I² * R');
+        _formulasUsed.addAll(['V = I * R', 'P = I² * R']);
       } else if (V != null && P != null) {
         I = P / V;
         R = (V * V) / P;
-        _formulasUsed.add('I = P / V');
-        _formulasUsed.add('R = V² / P');
+        _formulasUsed.addAll(['I = P / V', 'R = V² / P']);
       } else if (I != null && P != null) {
         V = P / I;
         R = P / (I * I);
-        _formulasUsed.add('V = P / I');
-        _formulasUsed.add('R = P / I²');
+        _formulasUsed.addAll(['V = P / I', 'R = P / I²']);
       } else if (R != null && P != null) {
         V = sqrt(P * R);
         I = sqrt(P / R);
-        _formulasUsed.add('V = √ (P * R)');
-        _formulasUsed.add('I = √ (P / R)');
+        _formulasUsed.addAll(['V = √ (P * R)', 'I = √ (P / R)']);
       }
 
       if (V!.isNaN ||
@@ -184,7 +179,7 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
           I.isInfinite ||
           R.isInfinite ||
           P.isInfinite) {
-        throw FormatException(
+        throw const FormatException(
           'Resultado indefinido o división por cero. Verifica tus entradas.',
         );
       }
@@ -457,7 +452,6 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
                       border: Border.all(color: Colors.grey, width: 0.5),
                     ),
                     titlesData: FlTitlesData(
-                      show: true,
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
@@ -470,15 +464,9 @@ class _OhmLawScreenState extends State<OhmLawScreen> {
                           },
                         ),
                       ),
-                      leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
+                      leftTitles: const AxisTitles(),
+                      topTitles: const AxisTitles(),
+                      rightTitles: const AxisTitles(),
                     ),
                   ),
                 ),

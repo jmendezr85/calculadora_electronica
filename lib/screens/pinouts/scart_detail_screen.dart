@@ -1,4 +1,5 @@
 // lib/screens/pinouts/scart_detail_screen.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -214,6 +215,12 @@ class FullScreenImageView extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('imagePath', imagePath));
+  }
 }
 
 class ScartDetailScreen extends StatelessWidget {
@@ -247,9 +254,9 @@ class ScartDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) =>
-                          FullScreenImageView(imagePath: _scartImagePath),
+                          const FullScreenImageView(imagePath: _scartImagePath),
                     ),
                   );
                 },
@@ -346,7 +353,6 @@ class ScartDetailScreen extends StatelessWidget {
       headingRowColor: WidgetStateProperty.all(colorScheme.primaryContainer),
       border: TableBorder.all(
         color: colorScheme.outlineVariant,
-        width: 1,
         borderRadius: BorderRadius.circular(8),
       ),
       columns: _buildColumns(sectionTitle),

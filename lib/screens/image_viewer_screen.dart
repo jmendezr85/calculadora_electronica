@@ -1,4 +1,5 @@
 // lib/screens/image_viewer_screen.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -83,5 +84,15 @@ class ImageViewerScreen extends StatelessWidget {
         ),
       );
     }
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(StringProperty('imagePath', imagePath))
+      ..add(StringProperty('title', title))
+      ..add(IterableProperty<String>('galleryImages', galleryImages))
+      ..add(IntProperty('initialIndex', initialIndex));
   }
 }

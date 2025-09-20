@@ -1,6 +1,7 @@
+import 'package:calculadora_electronica/main.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:calculadora_electronica/main.dart';
 
 /// Pantalla de símbolos electrónicos (sin ASCII).
 /// - Icons profesionales por componente.
@@ -59,8 +60,8 @@ class _ElectronicSymbolsScreenState extends State<ElectronicSymbolsScreen> {
                     ),
                   ],
                 ),
-                child: Row(
-                  children: const [
+                child: const Row(
+                  children: [
                     Icon(
                       Icons.workspace_premium,
                       size: 16,
@@ -306,6 +307,19 @@ class _SearchBar extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(
+        DiagnosticsProperty<TextEditingController>('controller', controller),
+      )
+      ..add(
+        ObjectFlagProperty<ValueChanged<String>>.has('onChanged', onChanged),
+      )
+      ..add(ObjectFlagProperty<VoidCallback>.has('onClear', onClear));
+  }
 }
 
 class _CategoryChips extends StatelessWidget {
@@ -349,6 +363,18 @@ class _CategoryChips extends StatelessWidget {
         },
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(IterableProperty<String>('categories', categories))
+      ..add(StringProperty('selected', selected))
+      ..add(
+        ObjectFlagProperty<ValueChanged<String>>.has('onSelected', onSelected),
+      )
+      ..add(DiagnosticsProperty<Map<String, int>?>('counts', counts));
   }
 }
 
@@ -410,6 +436,15 @@ class _SymbolsGrid extends StatelessWidget {
         );
       },
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(IterableProperty<SymbolItem>('items', items))
+      ..add(DiagnosticsProperty<bool>('compact', compact))
+      ..add(DiagnosticsProperty<bool>('proMode', proMode));
   }
 }
 
@@ -534,7 +569,6 @@ class _SymbolCard extends StatelessWidget {
               SizedBox(height: dense ? 6 : 8),
               Expanded(
                 child: Align(
-                  alignment: Alignment.center,
                   child: Icon(
                     item.icon,
                     size: dense ? 44 : 56,
@@ -560,7 +594,7 @@ class _SymbolCard extends StatelessWidget {
   void _showDetails(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -613,6 +647,15 @@ class _SymbolCard extends StatelessWidget {
       },
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty<SymbolItem>('item', item))
+      ..add(DiagnosticsProperty<bool>('dense', dense))
+      ..add(DiagnosticsProperty<bool>('proMode', proMode));
+  }
 }
 
 /* ---------- Chips / Pills ---------- */
@@ -657,6 +700,15 @@ class _ProPill extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty<IconData>('icon', icon))
+      ..add(StringProperty('label', label))
+      ..add(StringProperty('value', value));
+  }
 }
 
 class _Tag extends StatelessWidget {
@@ -675,6 +727,12 @@ class _Tag extends StatelessWidget {
       ),
       child: Text(text, overflow: TextOverflow.ellipsis),
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('text', text));
   }
 }
 
@@ -706,6 +764,14 @@ class _DetailRow extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(StringProperty('label', label))
+      ..add(StringProperty('value', value));
   }
 }
 

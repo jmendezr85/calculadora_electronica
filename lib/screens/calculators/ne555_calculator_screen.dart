@@ -1,8 +1,8 @@
 // lib/screens/ne555_calculator_screen.dart
 
+import 'package:calculadora_electronica/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:calculadora_electronica/main.dart';
 
 class Ne555CalculatorScreen extends StatefulWidget {
   const Ne555CalculatorScreen({super.key});

@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
 
 enum ComponentType {
   resistor,
@@ -307,7 +308,6 @@ $_heatsinkAdvice
           if (units.length > 1) ...[
             const SizedBox(width: 8),
             Expanded(
-              flex: 1,
               child: DropdownButtonFormField<String>(
                 value: selectedUnit,
                 items: units

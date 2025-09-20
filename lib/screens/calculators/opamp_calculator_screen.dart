@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 
 class OpAmpCalculatorScreen extends StatefulWidget {
   const OpAmpCalculatorScreen({super.key});
@@ -117,7 +117,6 @@ class _OpAmpCalculatorScreenState extends State<OpAmpCalculatorScreen> {
                 padding: const EdgeInsets.all(8.0),
                 child: LineChart(
                   LineChartData(
-                    gridData: FlGridData(show: true),
                     titlesData: FlTitlesData(
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
@@ -144,10 +143,9 @@ class _OpAmpCalculatorScreenState extends State<OpAmpCalculatorScreen> {
                     lineBarsData: [
                       LineChartBarData(
                         spots: _transferCurve,
-                        isCurved: false,
                         color: Colors.blue,
                         barWidth: 3,
-                        dotData: FlDotData(show: false),
+                        dotData: const FlDotData(show: false),
                       ),
                     ],
                   ),

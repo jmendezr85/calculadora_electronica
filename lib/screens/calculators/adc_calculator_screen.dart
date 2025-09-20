@@ -1,10 +1,10 @@
 // lib/screens/adc_calculator_screen.dart
 
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'dart:math';
 import 'package:calculadora_electronica/main.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class AdcCalculatorScreen extends StatefulWidget {
   const AdcCalculatorScreen({super.key});
@@ -240,8 +240,11 @@ class _AdcCalculatorScreenState extends State<AdcCalculatorScreen>
     _gainErrorController.dispose();
     _inlController.dispose();
     _dnlController.dispose();
-    _animationController.stop();
-    _animationController.dispose();
+
+    _animationController
+      ..stop()
+      ..dispose();
+
     super.dispose();
   }
 
@@ -644,7 +647,7 @@ class _AdcCalculatorScreenState extends State<AdcCalculatorScreen>
     required String label,
     required String value,
     required String unit,
-    required Function(String) onChanged,
+    required void Function(String) onChanged,
     required double min,
     required double max,
   }) {
@@ -698,7 +701,7 @@ class _AdcCalculatorScreenState extends State<AdcCalculatorScreen>
   Widget _buildErrorAnalysisChart(BuildContext context) {
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: true, drawVerticalLine: false),
+        gridData: const FlGridData(drawVerticalLine: false),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
@@ -713,7 +716,6 @@ class _AdcCalculatorScreenState extends State<AdcCalculatorScreen>
               showTitles: true,
               getTitlesWidget: (value, _) =>
                   Text('${value.toStringAsFixed(2)}V'),
-              reservedSize: 22,
             ),
           ),
           rightTitles: const AxisTitles(),

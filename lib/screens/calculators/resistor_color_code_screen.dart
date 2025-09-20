@@ -139,7 +139,7 @@ class _ResistorColorCodeScreenState extends State<ResistorColorCodeScreen> {
         final double multiplierVal = _multiplierValue[_selectedMultiplier!]!;
         final String toleranceVal = _toleranceValue[_selectedTolerance!]!;
 
-        double resistance = (band1Val * 10 + band2Val) * multiplierVal;
+        final double resistance = (band1Val * 10 + band2Val) * multiplierVal;
 
         setState(() {
           _resistanceValue = _formatResistance(resistance);
@@ -163,7 +163,7 @@ class _ResistorColorCodeScreenState extends State<ResistorColorCodeScreen> {
         final double multiplierVal = _multiplierValue[_selectedMultiplier!]!;
         final String toleranceVal = _toleranceValue[_selectedTolerance!]!;
 
-        double resistance =
+        final double resistance =
             (band1Val * 100 + band2Val * 10 + band3Val) * multiplierVal;
 
         setState(() {
@@ -444,7 +444,6 @@ class _ResistorColorCodeScreenState extends State<ResistorColorCodeScreen> {
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
                       color: Theme.of(context).colorScheme.outline,
-                      width: 1,
                     ),
                   ),
                   // ELIMINAR 'color: _getColor(value),' si estaba aquí fuera del decoration.
@@ -536,13 +535,10 @@ class ResistorPainter extends CustomPainter {
     // Efecto de luz
     final highlightPaint = Paint()
       ..shader =
-          RadialGradient(
-            center: const Alignment(-0.3, -0.3),
+          const RadialGradient(
+            center: Alignment(-0.3, -0.3),
             radius: 0.7,
-            colors: [
-              const Color.fromRGBO(255, 255, 255, 30),
-              Colors.transparent,
-            ],
+            colors: [Color.fromRGBO(255, 255, 255, 30), Colors.transparent],
           ).createShader(
             Rect.fromCenter(
               center: Offset(centerX, centerY),
@@ -640,15 +636,9 @@ class ResistorPainter extends CustomPainter {
     double y2,
   ) {
     final terminalPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          const Color(0xFFD0D0D0),
-          const Color(0xFFA0A0A0),
-          const Color(0xFF808080),
-        ],
-        stops: const [0.0, 0.5, 1.0],
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
+      ..shader = const LinearGradient(
+        colors: [Color(0xFFD0D0D0), Color(0xFFA0A0A0), Color(0xFF808080)],
+        stops: [0.0, 0.5, 1.0],
       ).createShader(Rect.fromPoints(Offset(x1, y1 - 3), Offset(x2, y2 + 3)))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5
@@ -690,17 +680,17 @@ class ResistorPainter extends CustomPainter {
       ..strokeWidth = 0.5
       ..isAntiAlias = true;
 
-    // Dibujar bordes
-    canvas.drawLine(
-      Offset(bandRect.left, bandRect.top),
-      Offset(bandRect.right, bandRect.top),
-      borderPaint,
-    );
-    canvas.drawLine(
-      Offset(bandRect.left, bandRect.bottom),
-      Offset(bandRect.right, bandRect.bottom),
-      borderPaint,
-    );
+    canvas
+      ..drawLine(
+        Offset(bandRect.left, bandRect.top),
+        Offset(bandRect.right, bandRect.top),
+        borderPaint,
+      )
+      ..drawLine(
+        Offset(bandRect.left, bandRect.bottom),
+        Offset(bandRect.right, bandRect.bottom),
+        borderPaint,
+      );
 
     // Efecto de sombra - Usando Color.fromRGBO
     final shadowPaint = Paint()

@@ -172,7 +172,6 @@ class ResistorColorTableScreen extends StatelessWidget {
                                     item['Color'] == 'Amarillo'
                                 ? Border.all(
                                     color: Colors.grey.shade400,
-                                    width: 1,
                                   )
                                 : null,
                           ),

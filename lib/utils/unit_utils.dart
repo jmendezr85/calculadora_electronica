@@ -158,7 +158,7 @@ class UnitUtils {
 
     for (var i = 0; i < sortedPrefixes.length; i++) {
       final currentPrefix = sortedPrefixes[i];
-      bool isLastPrefix = i == sortedPrefixes.length - 1;
+      final bool isLastPrefix = i == sortedPrefixes.length - 1;
       if (value.abs() >= currentPrefix.multiplier &&
           (isLastPrefix || value.abs() < sortedPrefixes[i + 1].multiplier)) {
         selectedPrefix = currentPrefix;

@@ -1,6 +1,6 @@
 // lib/screens/pinouts/displayport_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 const String _displayPortTitle = 'Conector DisplayPort';
 const String _displayPortImagePath =
@@ -335,8 +335,8 @@ class DisplayPortDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _displayPortImagePath,
                         title:
                             _displayPortTitle, // Pasa el título para la pantalla de zoom
@@ -472,7 +472,7 @@ class DisplayPortDetailScreen extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (context) => ImageViewerScreen(
                                   imagePath: item['imagen_pinout']!,
                                   title:

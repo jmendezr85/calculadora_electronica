@@ -1,4 +1,5 @@
 // lib/screens/pinouts/s_video_detail_screen.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -181,6 +182,12 @@ class FullScreenImageView extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('imagePath', imagePath));
+  }
 }
 
 class SVideoDetailScreen extends StatelessWidget {
@@ -214,9 +221,10 @@ class SVideoDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          FullScreenImageView(imagePath: _sVideoImagePath),
+                    MaterialPageRoute<void>(
+                      builder: (context) => const FullScreenImageView(
+                        imagePath: _sVideoImagePath,
+                      ),
                     ),
                   );
                 },
@@ -344,7 +352,7 @@ class SVideoDetailScreen extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (context) => FullScreenImageView(
                                   imagePath: item['imagen_pinout']!,
                                 ),

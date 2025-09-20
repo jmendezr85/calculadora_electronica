@@ -1,6 +1,6 @@
 // lib/screens/pinouts/atx_power_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 const String _atxPowerTitle = 'Conectores de Alimentación ATX';
 const String _atxPowerImagePath =
@@ -388,8 +388,8 @@ class AtxPowerDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _atxPowerImagePath,
                         title: _atxPowerTitle,
                       ),
@@ -453,7 +453,7 @@ class AtxPowerDetailScreen extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (context) => ImageViewerScreen(
                                   imagePath: section['image_pinout']!,
                                   title:
@@ -702,7 +702,7 @@ class AtxPowerDetailScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          MaterialPageRoute<void>(
                             builder: (context) => ImageViewerScreen(
                               imagePath: item['image_pinout']!,
                               title: item['title']!, // Usa el título del ítem

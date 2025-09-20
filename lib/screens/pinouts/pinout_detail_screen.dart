@@ -1,6 +1,6 @@
 // lib/screens/pinouts/pinout_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 // Datos específicos del Puerto USB, definidos directamente en esta pantalla.
 const String _usbTitle = 'Puerto USB';
@@ -267,8 +267,8 @@ class PinoutDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _usbImagePath,
                         title: _usbTitle,
                       ),
@@ -344,7 +344,6 @@ class PinoutDetailScreen extends StatelessWidget {
         headingRowColor: WidgetStateProperty.all(colorScheme.primaryContainer),
         border: TableBorder.all(
           color: colorScheme.outlineVariant,
-          width: 1,
           borderRadius: BorderRadius.circular(8),
         ),
         columns: const <DataColumn>[

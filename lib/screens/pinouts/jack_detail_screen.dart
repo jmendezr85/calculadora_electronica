@@ -1,6 +1,6 @@
 // lib/screens/pinouts/jack_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 const String _jackTitle = 'Conector Jack (Audio, TRRS, TRS, TS)';
 const String _jackImagePath =
@@ -205,8 +205,8 @@ class JackDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _jackImagePath,
                         title:
                             _jackTitle, // Pasa el título para la pantalla de zoom
@@ -339,7 +339,7 @@ class JackDetailScreen extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (context) => ImageViewerScreen(
                                   imagePath: item['imagen_pinout']!,
                                   title:
@@ -529,7 +529,7 @@ class JackDetailScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => ImageViewerScreen(
                                 imagePath: item['image_pinout']!,
                                 title:

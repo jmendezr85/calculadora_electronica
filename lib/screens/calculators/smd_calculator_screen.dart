@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
 
 // Nueva clase para almacenar los resultados de cada componente
 class SmdComponentData {
@@ -45,7 +46,7 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
   }
 
   void _calculateSmdValue() {
-    String code = _smdCodeController.text.trim().toUpperCase();
+    final String code = _smdCodeController.text.trim().toUpperCase();
     _result = '';
     _explanation = '';
     _componentType = '';
@@ -58,20 +59,20 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
       return;
     }
 
-    List<SmdComponentData> possibleResults = [];
+    final List<SmdComponentData> possibleResults = [];
 
     if (_selectedComponentType == 'Auto-Detectar') {
-      SmdComponentData? resResult = _parseResistance(code);
+      final SmdComponentData? resResult = _parseResistance(code);
       if (resResult != null) {
         possibleResults.add(resResult);
       }
 
-      SmdComponentData? capResult = _parseCapacitor(code);
+      final SmdComponentData? capResult = _parseCapacitor(code);
       if (capResult != null) {
         possibleResults.add(capResult);
       }
 
-      SmdComponentData? indResult = _parseInductor(code);
+      final SmdComponentData? indResult = _parseInductor(code);
       if (indResult != null) {
         possibleResults.add(indResult);
       }
@@ -94,7 +95,7 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
             .join('\n\n');
       }
     } else if (_selectedComponentType == 'Resistencia') {
-      SmdComponentData? resResult = _parseResistance(code);
+      final SmdComponentData? resResult = _parseResistance(code);
       if (resResult != null) {
         _componentType = resResult.type;
         _result = 'Valor: ${resResult.value}';
@@ -106,7 +107,7 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
         _componentType = 'Resistencia';
       }
     } else if (_selectedComponentType == 'Capacitor') {
-      SmdComponentData? capResult = _parseCapacitor(code);
+      final SmdComponentData? capResult = _parseCapacitor(code);
       if (capResult != null) {
         _componentType = capResult.type;
         _result = 'Valor: ${capResult.value}';
@@ -118,7 +119,7 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
         _componentType = 'Capacitor';
       }
     } else if (_selectedComponentType == 'Inductor') {
-      SmdComponentData? indResult = _parseInductor(code);
+      final SmdComponentData? indResult = _parseInductor(code);
       if (indResult != null) {
         _componentType = indResult.type;
         _result = 'Valor: ${indResult.value}';
@@ -143,9 +144,9 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
   // --- Lógica de Parsing para RESISTENCIAS ---
   SmdComponentData? _parseResistance(String code) {
     if (RegExp(r'^\d{3}$').hasMatch(code)) {
-      int value = int.parse(code.substring(0, 2));
-      int multiplier = int.parse(code.substring(2, 3));
-      double resistance = value * math.pow(10, multiplier).toDouble();
+      final int value = int.parse(code.substring(0, 2));
+      final int multiplier = int.parse(code.substring(2, 3));
+      final double resistance = value * math.pow(10, multiplier).toDouble();
       return SmdComponentData(
         type: 'Resistencia',
         value: '${_formatResistance(resistance)}Ω', // Interpolación aquí
@@ -153,9 +154,9 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
             'Código de 3 dígitos (Resistencia): Los primeros dos dígitos son el valor, el tercero es el número de ceros.',
       );
     } else if (RegExp(r'^\d{4}$').hasMatch(code)) {
-      int value = int.parse(code.substring(0, 3));
-      int multiplier = int.parse(code.substring(3, 4));
-      double resistance = value * math.pow(10, multiplier).toDouble();
+      final int value = int.parse(code.substring(0, 3));
+      final int multiplier = int.parse(code.substring(3, 4));
+      final double resistance = value * math.pow(10, multiplier).toDouble();
       return SmdComponentData(
         type: 'Resistencia',
         value: '${_formatResistance(resistance)}Ω', // Interpolación aquí
@@ -163,8 +164,8 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
             'Código de 4 dígitos (Resistencia): Los primeros tres dígitos son el valor, el cuarto es el número de ceros.',
       );
     } else if (RegExp(r'^\d*[RKM]$', caseSensitive: false).hasMatch(code)) {
-      String numericPart = code.substring(0, code.length - 1);
-      String unitChar = code.substring(code.length - 1).toUpperCase();
+      final String numericPart = code.substring(0, code.length - 1);
+      final String unitChar = code.substring(code.length - 1).toUpperCase();
       double multiplier = 1.0;
 
       if (unitChar == 'R') {
@@ -177,11 +178,11 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
         multiplier = 1000000.0;
       }
 
-      String valueStr = numericPart.replaceAll('R', '.');
-      double? value = double.tryParse(valueStr);
+      final String valueStr = numericPart.replaceAll('R', '.');
+      final double? value = double.tryParse(valueStr);
 
       if (value != null) {
-        double resistance = value * multiplier;
+        final double resistance = value * multiplier;
         return SmdComponentData(
           type: 'Resistencia',
           value: '${_formatResistance(resistance)}Ω', // Interpolación aquí
@@ -196,9 +197,9 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
   // --- Lógica de Parsing para CAPACITORES ---
   SmdComponentData? _parseCapacitor(String code) {
     if (RegExp(r'^\d{3}$').hasMatch(code)) {
-      int value = int.parse(code.substring(0, 2));
-      int multiplier = int.parse(code.substring(2, 3));
-      double capacitance = value * math.pow(10, multiplier).toDouble();
+      final int value = int.parse(code.substring(0, 2));
+      final int multiplier = int.parse(code.substring(2, 3));
+      final double capacitance = value * math.pow(10, multiplier).toDouble();
       return SmdComponentData(
         type: 'Capacitor',
         value: '${_formatCapacitance(capacitance)}F', // Interpolación aquí
@@ -206,8 +207,8 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
             'Código de 3 dígitos (Capacitor): Los primeros dos dígitos son el valor en pF, el tercero es el número de ceros.',
       );
     } else if (RegExp(r'^\d*[R]$', caseSensitive: false).hasMatch(code)) {
-      String valueStr = code.replaceAll('R', '.');
-      double? value = double.tryParse(valueStr);
+      final String valueStr = code.replaceAll('R', '.');
+      final double? value = double.tryParse(valueStr);
       if (value != null) {
         return SmdComponentData(
           type: 'Capacitor',
@@ -223,9 +224,9 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
   // --- Lógica de Parsing para INDUCTORES ---
   SmdComponentData? _parseInductor(String code) {
     if (RegExp(r'^\d{3}$').hasMatch(code)) {
-      int value = int.parse(code.substring(0, 2));
-      int multiplier = int.parse(code.substring(2, 3));
-      double inductance = value * math.pow(10, multiplier).toDouble();
+      final int value = int.parse(code.substring(0, 2));
+      final int multiplier = int.parse(code.substring(2, 3));
+      final double inductance = value * math.pow(10, multiplier).toDouble();
       return SmdComponentData(
         type: 'Inductor',
         value: '${_formatInductance(inductance)}H', // Interpolación aquí
@@ -233,8 +234,8 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
             'Código de 3 dígitos (Inductor): Los primeros dos dígitos son el valor en nH, el tercero es el número de ceros.',
       );
     } else if (RegExp(r'^\d*[R]$', caseSensitive: false).hasMatch(code)) {
-      String valueStr = code.replaceAll('R', '.');
-      double? value = double.tryParse(valueStr);
+      final String valueStr = code.replaceAll('R', '.');
+      final double? value = double.tryParse(valueStr);
       if (value != null) {
         return SmdComponentData(
           type: 'Inductor',
@@ -244,8 +245,8 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
         );
       }
     } else if (RegExp(r'^\d*[NMU]$', caseSensitive: false).hasMatch(code)) {
-      String numericPart = code.substring(0, code.length - 1);
-      String unitChar = code.substring(code.length - 1).toUpperCase();
+      final String numericPart = code.substring(0, code.length - 1);
+      final String unitChar = code.substring(code.length - 1).toUpperCase();
       double multiplier = 1.0;
 
       if (unitChar == 'N') {
@@ -255,11 +256,11 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
         multiplier = 1000.0;
       }
 
-      String valueStr = numericPart.replaceAll('R', '.');
-      double? value = double.tryParse(valueStr);
+      final String valueStr = numericPart.replaceAll('R', '.');
+      final double? value = double.tryParse(valueStr);
 
       if (value != null) {
-        double inductance = value * multiplier;
+        final double inductance = value * multiplier;
         return SmdComponentData(
           type: 'Inductor',
           value: '${_formatInductance(inductance)}H', // Interpolación aquí

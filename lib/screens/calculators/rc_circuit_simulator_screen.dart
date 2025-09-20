@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'dart:math' as math;
-import 'package:fl_chart/fl_chart.dart';
 import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 
 enum SimulationMode { charging, discharging, both }
 
@@ -199,23 +200,13 @@ class _RCCircuitSimulatorScreenState extends State<RCCircuitSimulatorScreen> {
         _simulationTimer?.cancel();
       }
 
-      final newChargingData = [..._chargingDataNotifier.value];
-      newChargingData.add(
-        FlSpot(
-          _currentTime,
-          _voltage * (1 - math.exp(-_currentTime / _timeConstant)),
-        ),
-      );
-      _chargingDataNotifier.value = newChargingData;
+      final decay = math.exp(-_currentTime / _timeConstant);
 
-      final newDischargingData = [..._dischargingDataNotifier.value];
-      newDischargingData.add(
-        FlSpot(
-          _currentTime,
-          _initialDischargeVoltage * math.exp(-_currentTime / _timeConstant),
-        ),
-      );
-      _dischargingDataNotifier.value = newDischargingData;
+      _chargingDataNotifier.value = List.of(_chargingDataNotifier.value)
+        ..add(FlSpot(_currentTime, _voltage * (1 - decay)));
+
+      _dischargingDataNotifier.value = List.of(_dischargingDataNotifier.value)
+        ..add(FlSpot(_currentTime, _initialDischargeVoltage * decay));
     });
   }
 
@@ -360,7 +351,6 @@ class _RCCircuitSimulatorScreenState extends State<RCCircuitSimulatorScreen> {
                           builder: (context, dischargingData, _) {
                             return LineChart(
                               LineChartData(
-                                gridData: const FlGridData(show: true),
                                 titlesData: FlTitlesData(
                                   bottomTitles: AxisTitles(
                                     sideTitles: SideTitles(

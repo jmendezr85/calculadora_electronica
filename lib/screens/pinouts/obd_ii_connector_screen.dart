@@ -1,6 +1,6 @@
 // lib/screens/pinouts/obd_ii_connector_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart';
+import 'package:flutter/material.dart';
 
 const String _obdIititle = 'Conector OBD-II (On-Board Diagnostics II)';
 const String _obdIiImagePath = 'assets/images/pinouts/obd_ii_connector.png';
@@ -251,8 +251,8 @@ class ObdIiConnectorScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => ImageViewerScreen(
+            MaterialPageRoute<void>(
+              builder: (context) => const ImageViewerScreen(
                 imagePath: _obdIiImagePath,
                 title: _obdIititle,
               ),

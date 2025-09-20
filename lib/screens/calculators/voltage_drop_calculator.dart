@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 
 class VoltageDropCalculator extends StatefulWidget {
   const VoltageDropCalculator({super.key});
@@ -445,7 +445,6 @@ class _VoltageDropCalculatorState extends State<VoltageDropCalculator> {
                       ),
                     ),
                   ),
-                  gridData: FlGridData(show: true),
                   borderData: FlBorderData(show: true),
                 ),
               ),

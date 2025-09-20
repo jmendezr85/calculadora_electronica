@@ -1,6 +1,6 @@
 // lib/screens/pinouts/registered_jack_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 // Datos específicos del Jack Registrado, definidos directamente en esta pantalla.
 const String _rjTitle = 'Jack Registrado (RJ)';
@@ -94,8 +94,8 @@ class RegisteredJackDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _rjImagePath,
                         title: _rjTitle,
                       ),
@@ -172,7 +172,6 @@ class RegisteredJackDetailScreen extends StatelessWidget {
         headingRowColor: WidgetStateProperty.all(colorScheme.primaryContainer),
         border: TableBorder.all(
           color: colorScheme.outlineVariant,
-          width: 1,
           borderRadius: BorderRadius.circular(8),
         ),
         columns: const <DataColumn>[
@@ -194,7 +193,7 @@ class RegisteredJackDetailScreen extends StatelessWidget {
           final baseColor = colors.first;
           final stripeColor = colors.length > 1 ? colors[1] : null;
 
-          Color textColor = baseColor.computeLuminance() > 0.5
+          final Color textColor = baseColor.computeLuminance() > 0.5
               ? Colors.black
               : Colors.white;
 

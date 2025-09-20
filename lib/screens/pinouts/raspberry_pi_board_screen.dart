@@ -1,6 +1,6 @@
 // lib/screens/pinouts/raspberry_pi_board_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart';
+import 'package:flutter/material.dart';
 
 const String _raspberryPiTitle = 'Pinout de la placa Raspberry Pi';
 const String _raspberryPiImagePath =
@@ -404,8 +404,8 @@ class RaspberryPiBoardScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => ImageViewerScreen(
+            MaterialPageRoute<void>(
+              builder: (context) => const ImageViewerScreen(
                 imagePath: _raspberryPiImagePath,
                 title: _raspberryPiTitle,
               ),

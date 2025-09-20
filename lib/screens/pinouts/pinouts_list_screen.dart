@@ -1,29 +1,29 @@
 // lib/screens/pinouts/pinouts_list_screen.dart
-import 'package:flutter/material.dart';
-import 'package:calculadora_electronica/screens/pinouts/pinout_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/serial_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/parallel_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/ethernet_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/registered_jack_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/scart_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/dvi_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/hdmi_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/displayport_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/vga_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/s_video_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/jack_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/xlr_dmx_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/atx_power_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/eide_ata_sata_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/ps2_at_detail_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/twenty_five_pair_color_code_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/fiber_optic_color_code_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/midi_connector_screen.dart';
 import 'package:calculadora_electronica/screens/pinouts/apple_lightning_connector_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/obd_ii_connector_screen.dart';
-import 'package:calculadora_electronica/screens/pinouts/iso_connector_screen.dart';
 import 'package:calculadora_electronica/screens/pinouts/arduino_uno_board_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/atx_power_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/displayport_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/dvi_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/eide_ata_sata_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/ethernet_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/fiber_optic_color_code_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/hdmi_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/iso_connector_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/jack_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/midi_connector_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/obd_ii_connector_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/parallel_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/pinout_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/ps2_at_detail_screen.dart';
 import 'package:calculadora_electronica/screens/pinouts/raspberry_pi_board_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/registered_jack_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/s_video_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/scart_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/serial_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/twenty_five_pair_color_code_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/vga_detail_screen.dart';
+import 'package:calculadora_electronica/screens/pinouts/xlr_dmx_detail_screen.dart';
+import 'package:flutter/material.dart';
 
 class PinoutsListScreen extends StatelessWidget {
   const PinoutsListScreen({super.key});
@@ -254,7 +254,7 @@ class PinoutsListScreen extends StatelessWidget {
                 if (pinout['name'] == 'Puerto USB') {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) =>
                           const PinoutDetailScreen(), // No se pasan parámetros
                     ),
@@ -262,14 +262,14 @@ class PinoutsListScreen extends StatelessWidget {
                 } else if (pinout['name'] == 'Puerto Serie') {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const SerialDetailScreen(),
                     ),
                   );
                 } else if (pinout['name'] == 'Puerto Paralelo') {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const ParallelDetailScreen(),
                     ),
                   );
@@ -277,7 +277,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // <- Nueva condición
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const EthernetDetailScreen(),
                     ),
                   );
@@ -285,14 +285,14 @@ class PinoutsListScreen extends StatelessWidget {
                   // <- Nueva condición para Jack Registrado
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const RegisteredJackDetailScreen(),
                     ),
                   );
                 } else if (pinout['name'] == 'Conector SCART') {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const ScartDetailScreen(),
                     ),
                   );
@@ -300,7 +300,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para DVI
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const DVIDetailScreen(),
                     ),
                   );
@@ -308,7 +308,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para HDMI
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const HDMIDetailScreen(),
                     ),
                   );
@@ -316,7 +316,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para DisplayPort
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const DisplayPortDetailScreen(),
                     ),
                   );
@@ -324,7 +324,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para VGA
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const VGADetailScreen(),
                     ),
                   );
@@ -332,7 +332,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para S-Video
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const SVideoDetailScreen(),
                     ),
                   );
@@ -340,7 +340,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para Conector Jack
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const JackDetailScreen(),
                     ),
                   );
@@ -348,7 +348,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para Conector XLR y DMX
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const XlrDmxDetailScreen(),
                     ),
                   );
@@ -356,7 +356,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para Conectores de Alimentación ATX
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const AtxPowerDetailScreen(),
                     ),
                   );
@@ -364,7 +364,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para Conectores EIDE/ATA y SATA
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const EideAtaSataDetailScreen(),
                     ),
                   );
@@ -372,7 +372,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para Conectores PS/2 y AT
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const Ps2AtDetailScreen(),
                     ),
                   );
@@ -381,7 +381,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para el código de colores de 25 pares
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) =>
                           const TwentyFivePairColorCodeScreen(),
                     ),
@@ -391,7 +391,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para el código de colores de fibra óptica
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const FiberOpticColorCodeScreen(),
                     ),
                   );
@@ -399,7 +399,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para el conector MIDI
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const MidiConnectorScreen(),
                     ),
                   );
@@ -407,7 +407,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para el conector Lightning
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) =>
                           const AppleLightningConnectorScreen(),
                     ),
@@ -416,7 +416,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para el conector OBD-II
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const ObdIiConnectorScreen(),
                     ),
                   );
@@ -425,7 +425,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para el conector ISO
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const IsoConnectorScreen(),
                     ),
                   );
@@ -433,7 +433,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para la placa Arduino Uno
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const ArduinoUnoBoardScreen(),
                     ),
                   );
@@ -442,7 +442,7 @@ class PinoutsListScreen extends StatelessWidget {
                   // ¡NUEVO! Lógica para la placa Raspberry Pi
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => const RaspberryPiBoardScreen(),
                     ),
                   );

@@ -1,6 +1,6 @@
 // lib/screens/pinouts/parallel_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 const String _parallelTitle = 'Puerto Paralelo (LPT)';
 const String _parallelImagePath = 'assets/images/pinouts/parallel_port.png';
@@ -134,8 +134,8 @@ class ParallelDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _parallelImagePath,
                         title:
                             _parallelTitle, // Pasa el título para la pantalla de zoom

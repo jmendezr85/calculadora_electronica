@@ -1,6 +1,6 @@
 // lib/screens/pinouts/fiber_optic_color_code_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart';
+import 'package:flutter/material.dart';
 
 // --- TÍTULO Y DESCRIPCIONES ---
 const String _fiberOpticTitle = 'Código de Colores de Fibra Óptica';
@@ -144,8 +144,8 @@ class FiberOpticColorCodeScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => ImageViewerScreen(
+            MaterialPageRoute<void>(
+              builder: (context) => const ImageViewerScreen(
                 imagePath: _fiberOpticImagePath,
                 title: _fiberOpticTitle,
               ),
@@ -308,7 +308,7 @@ class FiberOpticColorCodeScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: fiberGroupColor,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.grey.shade400, width: 1.0),
+            border: Border.all(color: Colors.grey.shade400),
           ),
         ),
         childrenPadding: const EdgeInsets.all(16.0),

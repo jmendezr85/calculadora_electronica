@@ -1,6 +1,6 @@
+import 'package:calculadora_electronica/main.dart'; // Asegúrate de que esto apunta a tu archivo main.dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Importa SharedPreferences
-import 'package:calculadora_electronica/main.dart'; // Asegúrate de que esto apunta a tu archivo main.dart
 
 void main() {
   // Define un grupo de tests para la calculadora básica

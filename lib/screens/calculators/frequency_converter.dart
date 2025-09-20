@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:provider/provider.dart';
 import 'package:calculadora_electronica/main.dart'; // Asegúrate de que esta ruta sea correcta
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class FrequencyConverter extends StatefulWidget {
   const FrequencyConverter({super.key});
@@ -397,7 +397,7 @@ class _FrequencyConverterState extends State<FrequencyConverter> {
                       ),
                     ),
                     leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
+                      
                     ),
                   ),
                   gridData: const FlGridData(show: false),

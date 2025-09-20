@@ -1,7 +1,8 @@
 // lib/screens/pcb_trace_width_calculator_screen.dart
 
-import 'package:flutter/material.dart';
 import 'dart:math';
+
+import 'package:flutter/material.dart';
 
 class PcbTraceWidthCalculatorScreen extends StatefulWidget {
   const PcbTraceWidthCalculatorScreen({super.key});
@@ -245,7 +246,6 @@ class _PcbTraceWidthCalculatorScreenState
               controller: _tempRiseController,
               labelText: 'Aumento de Temperatura Permitido (ΔT en °C)',
               hintText: 'Ej: 10 (grados Celsius)',
-              keyboardType: TextInputType.number,
               icon: Icons.thermostat,
             ),
             const SizedBox(height: 15),
@@ -308,7 +308,6 @@ class _PcbTraceWidthCalculatorScreenState
               controller: _ambientTempController,
               labelText: 'Temperatura Ambiente (T_ambiente en °C) (Opcional)',
               hintText: 'Ej: 25 (para cálculo de resistencia)',
-              keyboardType: TextInputType.number,
               icon: Icons.thermostat_outlined,
             ),
             const SizedBox(height: 20),

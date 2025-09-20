@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/utils/unit_utils.dart'; // Importa las utilidades de unidades
+import 'package:flutter/material.dart';
 
 // --- 1. (UnitPrefix ahora viene de unit_utils.dart) ---
 
@@ -286,7 +286,7 @@ class _UnitConverterScreenState extends State<UnitConverterScreen> {
   }
 
   void _convertUnits() {
-    double? inputValue = double.tryParse(_inputValueController.text);
+    final double? inputValue = double.tryParse(_inputValueController.text);
 
     if (inputValue == null || _inputUnit == null || _outputUnit == null) {
       setState(() {
@@ -297,10 +297,10 @@ class _UnitConverterScreenState extends State<UnitConverterScreen> {
 
     // Convertir el valor de la unidad de entrada a la unidad base de su categoría
     // Usamos totalConversionFactor que incluye el multiplicador del prefijo
-    double valueInBaseUnit = inputValue * _inputUnit!.totalConversionFactor;
+    final double valueInBaseUnit = inputValue * _inputUnit!.totalConversionFactor;
 
     // Convertir el valor de la unidad base a la unidad de salida
-    double convertedValue =
+    final double convertedValue =
         valueInBaseUnit / _outputUnit!.totalConversionFactor;
 
     setState(() {
@@ -317,7 +317,7 @@ class _UnitConverterScreenState extends State<UnitConverterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    List<ElectronicUnit> unitsInSelectedCategory = _selectedCategory == null
+    final List<ElectronicUnit> unitsInSelectedCategory = _selectedCategory == null
         ? []
         : ElectronicUnit.all
               .where((unit) => unit.category == _selectedCategory)

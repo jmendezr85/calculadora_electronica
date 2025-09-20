@@ -1,6 +1,6 @@
+import 'package:calculadora_electronica/main.dart'; // Asegúrate de que esta ruta sea correcta
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:calculadora_electronica/main.dart'; // Asegúrate de que esta ruta sea correcta
 
 class InductorColorCodeScreen extends StatefulWidget {
   const InductorColorCodeScreen({super.key});
@@ -89,10 +89,10 @@ class _InductorColorCodeScreenState extends State<InductorColorCodeScreen> {
         return;
       }
 
-      int? val1 = _bandValue[_selectedBand1];
-      int? val2 = _bandValue[_selectedBand2];
-      int? val3 = _is5Band ? _bandValue[_selectedBand3] : null;
-      double? multiplier = _multiplierValue[_selectedMultiplier];
+      final int? val1 = _bandValue[_selectedBand1];
+      final int? val2 = _bandValue[_selectedBand2];
+      final int? val3 = _is5Band ? _bandValue[_selectedBand3] : null;
+      final double? multiplier = _multiplierValue[_selectedMultiplier];
 
       if (val1 == null ||
           val2 == null ||
@@ -104,10 +104,10 @@ class _InductorColorCodeScreenState extends State<InductorColorCodeScreen> {
         return;
       }
 
-      String baseValueString = _is5Band ? '$val1$val2$val3' : '$val1$val2';
-      double baseValue = double.parse(baseValueString);
+      final String baseValueString = _is5Band ? '$val1$val2$val3' : '$val1$val2';
+      final double baseValue = double.parse(baseValueString);
 
-      double inductorValue = baseValue * multiplier;
+      final double inductorValue = baseValue * multiplier;
 
       String formattedValue;
       if (inductorValue >= 1000000000) {

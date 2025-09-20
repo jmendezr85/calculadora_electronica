@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:calculadora_electronica/main.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class BatteryLifeCalculatorScreen extends StatefulWidget {
   const BatteryLifeCalculatorScreen({super.key});
@@ -568,7 +568,7 @@ class _BatteryLifeCalculatorScreenState
     required String label,
     required String value,
     required String unit,
-    required Function(String) onChanged,
+    required void Function(String) onChanged,
     required double min,
     required double max,
   }) {
@@ -618,16 +618,15 @@ class _BatteryLifeCalculatorScreenState
   Widget _buildEnhancedDegradationChart(BuildContext context) {
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: true, drawVerticalLine: false),
+        gridData: const FlGridData(drawVerticalLine: false),
         titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
+          leftTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: true, reservedSize: 40),
           ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, _) => Text('${value.toInt()}'),
-              reservedSize: 22,
             ),
           ),
           rightTitles: const AxisTitles(),

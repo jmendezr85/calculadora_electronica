@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'dart:math' as math;
+
 import 'package:calculadora_electronica/main.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class DecibelCalculatorScreen extends StatefulWidget {
   const DecibelCalculatorScreen({super.key});
@@ -86,17 +87,17 @@ class _DecibelCalculatorScreenState extends State<DecibelCalculatorScreen>
     if (_dbValueController.text.isNotEmpty && dbValue != null) {
       // Calcular valor lineal a partir de dB
       if (_selectedMode == DecibelMode.power) {
-        double linearValue = math.pow(10, dbValue / 10).toDouble();
+        final double linearValue = math.pow(10, dbValue / 10).toDouble();
         _result = 'Valor Lineal (Potencia): ${linearValue.toStringAsFixed(4)}';
         _explanation = 'Power (dB) = 10 * log10(P2/P1) => P2/P1 = 10^(dB/10)';
       } else {
-        double linearValue = math.pow(10, dbValue / 20).toDouble();
+        final double linearValue = math.pow(10, dbValue / 20).toDouble();
         _result = 'Valor Lineal (Voltaje): ${linearValue.toStringAsFixed(4)}';
         _explanation = 'Voltage (dB) = 20 * log10(V2/V1) => V2/V1 = 10^(dB/20)';
       }
     } else if (value1 != null && value2 != null && value1 != 0) {
       // Calcular dB a partir de valores lineales
-      double ratio = value2 / value1;
+      final double ratio = value2 / value1;
       double calculatedDb;
       if (_selectedMode == DecibelMode.power) {
         calculatedDb = 10 * math.log(ratio) / math.ln10;
@@ -523,7 +524,7 @@ class _DecibelCalculatorScreenState extends State<DecibelCalculatorScreen>
     required String label,
     required String value,
     required String unit,
-    required Function(String) onChanged,
+    required void Function(String) onChanged,
     required double min,
     required double max,
   }) {
@@ -575,7 +576,6 @@ class _DecibelCalculatorScreenState extends State<DecibelCalculatorScreen>
   Widget _buildDynamicRangeChart(BuildContext context) {
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: true),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
@@ -588,7 +588,6 @@ class _DecibelCalculatorScreenState extends State<DecibelCalculatorScreen>
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, _) => Text('${value.toInt()}dB'),
-              reservedSize: 22,
             ),
           ),
           rightTitles: const AxisTitles(),

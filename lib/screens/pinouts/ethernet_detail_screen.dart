@@ -1,6 +1,6 @@
 // lib/screens/pinouts/ethernet_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 const String _ethernetTitle = 'Puerto y Estándares Ethernet (RJ45)';
 const String _ethernetImagePath = 'assets/images/pinouts/ethernet_port.png';
@@ -270,8 +270,8 @@ class EthernetDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _ethernetImagePath,
                         title:
                             _ethernetTitle, // Pasa el título para la pantalla de zoom
@@ -376,7 +376,6 @@ class EthernetDetailScreen extends StatelessWidget {
         headingRowColor: WidgetStateProperty.all(colorScheme.primaryContainer),
         border: TableBorder.all(
           color: colorScheme.outlineVariant,
-          width: 1,
           borderRadius: BorderRadius.circular(8),
         ),
         columns: _buildColumns(sectionTitle),

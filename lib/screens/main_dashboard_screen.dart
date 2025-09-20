@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/calculators_list_screen.dart';
-import "package:calculadora_electronica/screens/settings_screen.dart";
 import 'package:calculadora_electronica/screens/pinouts/pinouts_list_screen.dart';
+import 'package:calculadora_electronica/screens/settings_screen.dart';
+import 'package:flutter/material.dart';
 
 class MainDashboardScreen extends StatefulWidget {
   const MainDashboardScreen({super.key});

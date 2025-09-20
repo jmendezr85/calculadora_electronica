@@ -27,7 +27,7 @@ class _ZenerDiodeCodeScreenState extends State<ZenerDiodeCodeScreen> {
       _resultPower = '';
       _resultExplanation = '';
 
-      String code = _codeController.text.trim().toUpperCase();
+      final String code = _codeController.text.trim().toUpperCase();
 
       if (code.isEmpty) {
         _resultExplanation = 'Por favor, introduce un código de diodo Zener.';
@@ -38,7 +38,7 @@ class _ZenerDiodeCodeScreenState extends State<ZenerDiodeCodeScreen> {
 
       // Estándar 1Nxxxx (ej: 1N4735A -> 6.2V)
       if (code.startsWith('1N') && code.length >= 6) {
-        String numPart = code.substring(2, 6); // Ej: "4735" de 1N4735A
+        final String numPart = code.substring(2, 6); // Ej: "4735" de 1N4735A
         // Implementa un mapa o lógica para los códigos 1N si tienes una tabla de referencia
         // Por ahora, solo un ejemplo básico:
         if (numPart == '4735') {
@@ -61,18 +61,18 @@ class _ZenerDiodeCodeScreenState extends State<ZenerDiodeCodeScreen> {
       // Código de 2 caracteres y un número (ej: C3V3 -> 3.3V, 4V7 -> 4.7V, 10V -> 10V)
       // Este formato es más común en diodos SMD.
       // Formato: Digito/V/Digito (4V7), V/Digito (V51), Digito/Digito/V (3V3)
-      RegExp regExpVoltage = RegExp(r'^(\d+)?V(\d+)?$');
+      final RegExp regExpVoltage = RegExp(r'^(\d+)?V(\d+)?$');
       Match? match = regExpVoltage.firstMatch(code);
 
       if (match != null) {
-        String? preV = match.group(1); // Parte antes de 'V'
-        String? postV = match.group(2); // Parte después de 'V'
+        final String? preV = match.group(1); // Parte antes de 'V'
+        final String? postV = match.group(2); // Parte después de 'V'
 
         String voltageStr = '';
         if (preV != null) voltageStr += preV;
         if (postV != null) voltageStr += '.$postV';
 
-        double? voltage = double.tryParse(voltageStr);
+        final double? voltage = double.tryParse(voltageStr);
 
         if (voltage != null) {
           _resultVoltage = '$voltage V';
@@ -87,17 +87,17 @@ class _ZenerDiodeCodeScreenState extends State<ZenerDiodeCodeScreen> {
       // No siempre es el voltaje, a veces indica que es de alta potencia, o es parte de un código complejo.
       // Esta lógica es más especulativa sin una tabla clara.
       if (code.endsWith('W') && code.length > 1) {
-        String potentialVoltageCode = code.substring(0, code.length - 1);
+        final String potentialVoltageCode = code.substring(0, code.length - 1);
         match = regExpVoltage.firstMatch(potentialVoltageCode);
         if (match != null) {
-          String? preV = match.group(1);
-          String? postV = match.group(2);
+          final String? preV = match.group(1);
+          final String? postV = match.group(2);
 
           String voltageStr = '';
           if (preV != null) voltageStr += preV;
           if (postV != null) voltageStr += '.$postV';
 
-          double? voltage = double.tryParse(voltageStr);
+          final double? voltage = double.tryParse(voltageStr);
           if (voltage != null) {
             _resultVoltage = '$voltage V';
             _resultPower =

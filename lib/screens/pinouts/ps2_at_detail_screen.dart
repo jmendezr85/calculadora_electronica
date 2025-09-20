@@ -1,6 +1,6 @@
 // lib/screens/pinouts/ps2_at_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 const String _ps2AtTitle = 'Conectores PS/2 y AT (Teclado/Ratón)';
 const String _ps2AtImagePath =
@@ -139,8 +139,8 @@ class Ps2AtDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _ps2AtImagePath,
                         title: _ps2AtTitle,
                       ),
@@ -205,7 +205,7 @@ class Ps2AtDetailScreen extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (context) => ImageViewerScreen(
                                   imagePath: section['image_pinout']!,
                                   title:
@@ -393,7 +393,7 @@ class Ps2AtDetailScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          MaterialPageRoute<void>(
                             builder: (context) => ImageViewerScreen(
                               imagePath: item['image_pinout']!,
                               title: item['title']!, // Usa el título del ítem

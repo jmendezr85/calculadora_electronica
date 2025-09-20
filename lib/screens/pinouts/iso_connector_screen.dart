@@ -1,6 +1,6 @@
 // lib/screens/pinouts/iso_connector_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart';
+import 'package:flutter/material.dart';
 
 const String _isoConnectorTitle = 'Conector ISO para Estéreos de Automóvil';
 const String _isoConnectorImagePath = 'assets/images/pinouts/iso_connector.png';
@@ -251,8 +251,8 @@ class IsoConnectorScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => ImageViewerScreen(
+            MaterialPageRoute<void>(
+              builder: (context) => const ImageViewerScreen(
                 imagePath: _isoConnectorImagePath,
                 title: _isoConnectorTitle,
               ),

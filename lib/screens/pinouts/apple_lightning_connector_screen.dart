@@ -1,6 +1,6 @@
 // lib/screens/pinouts/apple_lightning_connector_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart';
+import 'package:flutter/material.dart';
 
 const String _appleLightningTitle = 'Conector Apple Lightning';
 const String _appleLightningImagePath =
@@ -189,8 +189,8 @@ class AppleLightningConnectorScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => ImageViewerScreen(
+            MaterialPageRoute<void>(
+              builder: (context) => const ImageViewerScreen(
                 imagePath: _appleLightningImagePath,
                 title: _appleLightningTitle,
               ),

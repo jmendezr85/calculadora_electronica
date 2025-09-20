@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class FadePageRoute extends PageRouteBuilder {
+class FadePageRoute extends PageRouteBuilder<void> {
   final Widget child;
 
   FadePageRoute({required this.child})

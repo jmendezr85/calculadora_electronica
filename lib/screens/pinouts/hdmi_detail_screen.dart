@@ -1,6 +1,6 @@
 // lib/screens/pinouts/hdmi_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 const String _hdmiTitle =
     'Conector HDMI (High-Definition Multimedia Interface)';
@@ -302,8 +302,8 @@ class HDMIDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _hdmiImagePath,
                         title:
                             _hdmiTitle, // Pasa el título para la pantalla de zoom
@@ -436,7 +436,7 @@ class HDMIDetailScreen extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (context) => ImageViewerScreen(
                                   imagePath: item['imagen_pinout']!,
                                   title:

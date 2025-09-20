@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app_localizations.dart';
-import 'screens/settings_screen.dart';
 import 'screens/main_dashboard_screen.dart';
+import 'screens/settings_screen.dart';
 
 /// =============================================================
 /// AppSettings: estado global + persistencia (SharedPreferences)

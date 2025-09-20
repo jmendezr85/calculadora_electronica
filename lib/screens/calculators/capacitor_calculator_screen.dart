@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:calculadora_electronica/main.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class CapacitorCalculatorScreen extends StatefulWidget {
   const CapacitorCalculatorScreen({super.key});
@@ -76,8 +76,10 @@ class _CapacitorCalculatorScreenState extends State<CapacitorCalculatorScreen>
     for (var controller in _capacitorControllers) {
       controller.dispose();
     }
-    _lastTextFieldFocusNode.removeListener(_onLastTextFieldUnfocused);
-    _lastTextFieldFocusNode.dispose();
+    _lastTextFieldFocusNode
+      ..removeListener(_onLastTextFieldUnfocused)
+      ..dispose();
+
     _toleranceController.dispose();
     _voltageRatingController.dispose();
     _temperatureController.dispose();
@@ -117,8 +119,8 @@ class _CapacitorCalculatorScreenState extends State<CapacitorCalculatorScreen>
     if (_numberOfCapacitors > 2) {
       setState(() {
         _numberOfCapacitors--;
-        final removedController = _capacitorControllers.removeLast();
-        removedController.dispose();
+        (_capacitorControllers.removeLast()..dispose());
+
         _calculateCapacitance();
       });
     } else {
@@ -139,7 +141,7 @@ class _CapacitorCalculatorScreenState extends State<CapacitorCalculatorScreen>
     });
 
     final isPro = context.read<AppSettings>().professionalMode;
-    List<double> capacitances = [];
+    final List<double> capacitances = [];
 
     // Validar entradas
     for (int i = 0; i < _numberOfCapacitors; i++) {
@@ -158,9 +160,15 @@ class _CapacitorCalculatorScreenState extends State<CapacitorCalculatorScreen>
     }
 
     // Cálculo básico
-    double parallelCapacitance = capacitances.fold(0.0, (sum, c) => sum + c);
-    double sumOfReciprocals = capacitances.fold(0.0, (sum, c) => sum + (1 / c));
-    double seriesCapacitance = 1 / sumOfReciprocals;
+    final double parallelCapacitance = capacitances.fold(
+      0.0,
+      (sum, c) => sum + c,
+    );
+    final double sumOfReciprocals = capacitances.fold(
+      0.0,
+      (sum, c) => sum + (1 / c),
+    );
+    final double seriesCapacitance = 1 / sumOfReciprocals;
 
     // Cálculos profesionales
     if (isPro) {
@@ -577,7 +585,7 @@ class _CapacitorCalculatorScreenState extends State<CapacitorCalculatorScreen>
     required String label,
     required String value,
     required String unit,
-    required Function(String) onChanged,
+    required void Function(String) onChanged,
     required double min,
     required double max,
   }) {
@@ -629,7 +637,7 @@ class _CapacitorCalculatorScreenState extends State<CapacitorCalculatorScreen>
   Widget _buildVoltageDistributionChart(BuildContext context) {
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: true, drawVerticalLine: false),
+        gridData: const FlGridData(drawVerticalLine: false),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
@@ -642,7 +650,6 @@ class _CapacitorCalculatorScreenState extends State<CapacitorCalculatorScreen>
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, _) => Text('C${value.toInt() + 1}'),
-              reservedSize: 22,
             ),
           ),
           rightTitles: const AxisTitles(),
@@ -675,7 +682,6 @@ class _CapacitorCalculatorScreenState extends State<CapacitorCalculatorScreen>
   Widget _buildEsrChart(BuildContext context) {
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: true),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
@@ -689,7 +695,6 @@ class _CapacitorCalculatorScreenState extends State<CapacitorCalculatorScreen>
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, _) => Text('${value.toInt()}°C'),
-              reservedSize: 22,
             ),
           ),
           rightTitles: const AxisTitles(),

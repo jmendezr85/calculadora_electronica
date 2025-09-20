@@ -1,11 +1,12 @@
+import 'package:calculadora_electronica/app_localizations.dart';
+import 'package:calculadora_electronica/main.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:calculadora_electronica/main.dart';
-import 'package:calculadora_electronica/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -125,6 +126,14 @@ class _SettingsSection extends StatelessWidget {
       ],
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty<IconData>('icon', icon))
+      ..add(StringProperty('title', title));
+  }
 }
 
 class _ThemeSelector extends StatelessWidget {
@@ -135,7 +144,7 @@ class _ThemeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    String themeName = settings.themeMode == ThemeMode.light
+    final String themeName = settings.themeMode == ThemeMode.light
         ? l10n.translate('lightTheme')
         : settings.themeMode == ThemeMode.dark
         ? l10n.translate('darkTheme')
@@ -146,11 +155,17 @@ class _ThemeSelector extends StatelessWidget {
       title: Text(l10n.translate('appTheme')),
       subtitle: Text(themeName),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () => showDialog(
+      onTap: () => showDialog<void>(
         context: context,
         builder: (context) => _ThemeDialog(settings: settings),
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<AppSettings>('settings', settings));
   }
 }
 
@@ -185,6 +200,12 @@ class _ThemeDialog extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<AppSettings>('settings', settings));
   }
 }
 
@@ -254,6 +275,12 @@ class _ThemeColorGrid extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<AppSettings>('settings', settings));
+  }
 }
 
 class _CustomColorPickerDialog extends StatefulWidget {
@@ -263,6 +290,12 @@ class _CustomColorPickerDialog extends StatefulWidget {
   @override
   State<_CustomColorPickerDialog> createState() =>
       _CustomColorPickerDialogState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(ColorProperty('initialColor', initialColor));
+  }
 }
 
 class _CustomColorPickerDialogState extends State<_CustomColorPickerDialog> {
@@ -361,6 +394,19 @@ class _LabeledSlider extends StatelessWidget {
       ],
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(StringProperty('label', label))
+      ..add(DoubleProperty('value', value))
+      ..add(DoubleProperty('min', min))
+      ..add(DoubleProperty('max', max))
+      ..add(
+        ObjectFlagProperty<ValueChanged<double>>.has('onChanged', onChanged),
+      );
+  }
 }
 
 class _ProfessionalModeSwitch extends StatelessWidget {
@@ -380,6 +426,12 @@ class _ProfessionalModeSwitch extends StatelessWidget {
       secondary: const Icon(Icons.workspace_premium_outlined),
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<AppSettings>('settings', settings));
+  }
 }
 
 class _HapticFeedbackSwitch extends StatelessWidget {
@@ -395,6 +447,12 @@ class _HapticFeedbackSwitch extends StatelessWidget {
       onChanged: (settings as dynamic).setHapticFeedback,
       secondary: const Icon(Icons.vibration),
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<AppSettings>('settings', settings));
   }
 }
 
@@ -421,6 +479,12 @@ class _TextScaleSlider extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<AppSettings>('settings', settings));
+  }
 }
 
 class _LanguageDropdown extends StatelessWidget {
@@ -444,6 +508,12 @@ class _LanguageDropdown extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<AppSettings>('settings', settings));
+  }
 }
 
 class _ResetSettingsButton extends StatelessWidget {
@@ -453,7 +523,7 @@ class _ResetSettingsButton extends StatelessWidget {
     return OutlinedButton.icon(
       icon: const Icon(Icons.restart_alt),
       label: Text(l10n.translate('resetSettings')),
-      onPressed: () => showDialog(
+      onPressed: () => showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
           title: Text(l10n.translate('resetConfirmationTitle')),
@@ -525,7 +595,7 @@ class _AppInfoSectionState extends State<_AppInfoSection> {
   }
 
   void _showPrivacyPolicy(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Política de Privacidad'),
@@ -548,7 +618,7 @@ class _AppInfoSectionState extends State<_AppInfoSection> {
   }
 
   void _showTerms(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Términos y Condiciones'),
@@ -576,7 +646,6 @@ class _AppInfoSectionState extends State<_AppInfoSection> {
       applicationVersion: _version.isEmpty
           ? null
           : 'v$_version (+$_buildNumber)',
-      applicationIcon: null,
     );
   }
 

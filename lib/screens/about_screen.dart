@@ -19,7 +19,6 @@ class AboutScreen extends StatelessWidget {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
             // Logo o icono de la app (puedes reemplazarlo con una imagen real)

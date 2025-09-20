@@ -1,9 +1,10 @@
 // lib/screens/inductive_reactance_screen.dart
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:calculadora_electronica/utils/unit_utils.dart';
-import 'package:provider/provider.dart';
+
 import 'package:calculadora_electronica/main.dart';
+import 'package:calculadora_electronica/utils/unit_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class InductiveReactanceScreen extends StatefulWidget {
   const InductiveReactanceScreen({super.key});
@@ -63,19 +64,19 @@ class _InductiveReactanceScreenState extends State<InductiveReactanceScreen> {
       return;
     }
 
-    double frequencyHz = UnitUtils.convertToBase(
+    final double frequencyHz = UnitUtils.convertToBase(
       frequencyInput,
       _frequencyUnit,
       UnitCategory.frequency,
     );
-    double inductanceH = UnitUtils.convertToBase(
+    final double inductanceH = UnitUtils.convertToBase(
       inductanceInput,
       _inductanceUnit,
       UnitCategory.inductance,
     );
 
-    double reactanceOhm = 2 * math.pi * frequencyHz * inductanceH;
-    String formattedReactance = UnitUtils.formatResult(
+    final double reactanceOhm = 2 * math.pi * frequencyHz * inductanceH;
+    final String formattedReactance = UnitUtils.formatResult(
       reactanceOhm,
       UnitCategory.resistance,
     );
@@ -86,21 +87,21 @@ class _InductiveReactanceScreenState extends State<InductiveReactanceScreen> {
 
     // Cálculo de modo profesional
     if (resistanceInput != null && resistanceInput > 0) {
-      double resistanceOhm = UnitUtils.convertToBase(
+      final double resistanceOhm = UnitUtils.convertToBase(
         resistanceInput,
         _resistanceUnit,
         UnitCategory.resistance,
       );
 
       // Calcular Factor Q (Q = XL / R)
-      double qFactor = reactanceOhm / resistanceOhm;
+      final double qFactor = reactanceOhm / resistanceOhm;
       _qFactorResult = 'Factor de Calidad (Q): ${qFactor.toStringAsFixed(2)}';
 
       // Calcular Impedancia (Z = sqrt(R^2 + XL^2))
-      double impedance = math.sqrt(
+      final double impedance = math.sqrt(
         math.pow(resistanceOhm, 2) + math.pow(reactanceOhm, 2),
       );
-      String formattedImpedance = UnitUtils.formatResult(
+      final String formattedImpedance = UnitUtils.formatResult(
         impedance,
         UnitCategory.resistance,
       );

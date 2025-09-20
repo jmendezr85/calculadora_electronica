@@ -1,6 +1,6 @@
+import 'package:calculadora_electronica/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:calculadora_electronica/main.dart';
 
 class ProModeBadge extends StatelessWidget {
   const ProModeBadge({super.key});

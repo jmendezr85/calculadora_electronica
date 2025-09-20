@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:fl_chart/fl_chart.dart';
-import 'package:provider/provider.dart';
+
 import 'package:calculadora_electronica/main.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class FilterCalculatorScreen extends StatefulWidget {
   const FilterCalculatorScreen({super.key});
@@ -273,7 +274,6 @@ class _FilterCalculatorScreenState extends State<FilterCalculatorScreen> {
                   padding: const EdgeInsets.all(8.0),
                   child: LineChart(
                     LineChartData(
-                      gridData: FlGridData(show: true),
                       titlesData: FlTitlesData(
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
@@ -312,8 +312,8 @@ class _FilterCalculatorScreenState extends State<FilterCalculatorScreen> {
                           isCurved: true,
                           color: Colors.blue,
                           barWidth: 3,
-                          dotData: FlDotData(show: false),
-                          belowBarData: BarAreaData(show: false),
+                          dotData: const FlDotData(show: false),
+                          belowBarData: BarAreaData(),
                         ),
                       ],
                       lineTouchData: LineTouchData(

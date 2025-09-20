@@ -1,4 +1,5 @@
 // lib/screens/pinouts/vga_detail_screen.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -224,6 +225,12 @@ class FullScreenImageView extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('imagePath', imagePath));
+  }
 }
 
 class VGADetailScreen extends StatelessWidget {
@@ -257,9 +264,9 @@ class VGADetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) =>
-                          FullScreenImageView(imagePath: _vgaImagePath),
+                          const FullScreenImageView(imagePath: _vgaImagePath),
                     ),
                   );
                 },
@@ -387,7 +394,7 @@ class VGADetailScreen extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (context) => FullScreenImageView(
                                   imagePath: item['imagen_pinout']!,
                                 ),

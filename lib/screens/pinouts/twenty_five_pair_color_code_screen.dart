@@ -1,6 +1,6 @@
 // lib/screens/pinouts/twenty_five_pair_color_code_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart';
+import 'package:flutter/material.dart';
 
 // --- TÍTULO Y DESCRIPCIONES ---
 const String _twentyFivePairTitle = 'Código de Colores de Cables de 25 Pares';
@@ -305,8 +305,8 @@ class TwentyFivePairColorCodeScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => ImageViewerScreen(
+            MaterialPageRoute<void>(
+              builder: (context) => const ImageViewerScreen(
                 imagePath: _twentyFivePairImagePath,
                 title: _twentyFivePairTitle,
               ),
@@ -383,7 +383,7 @@ class TwentyFivePairColorCodeScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: binderColor,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.grey.shade400, width: 1.0),
+            border: Border.all(color: Colors.grey.shade400),
           ),
         ),
         childrenPadding: const EdgeInsets.all(16.0),

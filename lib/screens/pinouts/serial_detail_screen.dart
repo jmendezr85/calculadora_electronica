@@ -1,4 +1,5 @@
 // lib/screens/pinouts/serial_detail_screen.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -218,6 +219,12 @@ class FullScreenImageView extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('imagePath', imagePath));
+  }
 }
 
 class SerialDetailScreen extends StatelessWidget {
@@ -246,9 +253,10 @@ class SerialDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          FullScreenImageView(imagePath: _serialImagePath),
+                    MaterialPageRoute<void>(
+                      builder: (context) => const FullScreenImageView(
+                        imagePath: _serialImagePath,
+                      ),
                     ),
                   );
                 },
@@ -329,7 +337,6 @@ class SerialDetailScreen extends StatelessWidget {
       headingRowColor: WidgetStateProperty.all(colorScheme.primaryContainer),
       border: TableBorder.all(
         color: colorScheme.outlineVariant,
-        width: 1,
         borderRadius: BorderRadius.circular(8),
       ),
       columns: const <DataColumn>[

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class InputRowWidget extends StatelessWidget {
@@ -63,5 +64,24 @@ class InputRowWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty<IconData>('icon', icon))
+      ..add(StringProperty('labelText', labelText))
+      ..add(
+        DiagnosticsProperty<TextEditingController>('controller', controller),
+      )
+      ..add(StringProperty('selectedUnit', selectedUnit))
+      ..add(IterableProperty<String>('units', units))
+      ..add(
+        ObjectFlagProperty<ValueChanged<String?>>.has(
+          'onUnitChanged',
+          onUnitChanged,
+        ),
+      );
   }
 }

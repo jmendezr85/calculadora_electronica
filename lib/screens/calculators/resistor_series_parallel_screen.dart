@@ -36,8 +36,9 @@ class _ResistorSeriesParallelScreenState
     for (var controller in _resistorControllers) {
       controller.dispose();
     }
-    _lastTextFieldFocusNode.removeListener(_onLastTextFieldUnfocused);
-    _lastTextFieldFocusNode.dispose();
+    _lastTextFieldFocusNode
+      ..removeListener(_onLastTextFieldUnfocused)
+      ..dispose(); // ✅ sin duplicar el receptor
     super.dispose();
   }
 
@@ -72,13 +73,10 @@ class _ResistorSeriesParallelScreenState
   }
 
   void _removeResistorField() {
-    if (_numberOfResistors > 2) {
-      // Mínimo de 2 resistencias
+    if (_numberOfResistors > 2 && _resistorControllers.isNotEmpty) {
       setState(() {
         _numberOfResistors--;
-        final TextEditingController removedController = _resistorControllers
-            .removeLast();
-        removedController.dispose(); // Libera los recursos del controlador
+        _resistorControllers.removeLast().dispose(); // ✅ sin cascada única
         _calculateResistance();
       });
     } else {
@@ -94,7 +92,7 @@ class _ResistorSeriesParallelScreenState
       _resultParallel = '';
     });
 
-    List<double> resistances = [];
+    final List<double> resistances = [];
     for (int i = 0; i < _numberOfResistors; i++) {
       final String text = _resistorControllers[i].text;
       final double? value = double.tryParse(text);
@@ -110,7 +108,7 @@ class _ResistorSeriesParallelScreenState
     }
 
     // Cálculo para resistencias en serie: Rs = R1 + R2 + ... + Rn
-    double seriesResistance = resistances.fold(0.0, (sum, r) => sum + r);
+    final double seriesResistance = resistances.fold(0.0, (sum, r) => sum + r);
     setState(() {
       _resultSeries =
           'Resistencia en Serie: ${_formatResistance(seriesResistance)}';
@@ -139,7 +137,7 @@ class _ResistorSeriesParallelScreenState
       return;
     }
 
-    double parallelResistance = 1 / sumOfReciprocals;
+    final double parallelResistance = 1 / sumOfReciprocals;
     setState(() {
       _resultParallel =
           'Resistencia en Paralelo: ${_formatResistance(parallelResistance)}';

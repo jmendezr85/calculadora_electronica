@@ -1,28 +1,66 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
-
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
+# Basado en flutter_lints, con reglas adicionales útiles para apps productivas.
 include: package:flutter_lints/flutter.yaml
 
-linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
-  rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+analyzer:
+  language:
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    missing_required_param: error
+    missing_return: error
+    always_declare_return_types: warning
+    avoid_print: warning
+    prefer_const_constructors: warning
+    prefer_const_literals_to_create_immutables: warning
+    unnecessary_const: warning
+    public_member_api_docs: ignore # súbelo a warning si documentamos API pública
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "build/**"
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_bool_literals_in_conditional_expressions
+    - avoid_function_literals_in_foreach_calls
+    - avoid_print
+    - avoid_redundant_argument_values
+    - cascade_invocations
+    - curly_braces_in_flow_control_structures
+    - diagnostic_describe_all_properties
+    - directives_ordering
+    - join_return_with_assignment
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_const_literals_to_create_immutables
+    - prefer_final_fields
+    - prefer_final_locals
+    - prefer_single_quotes
+    - sort_child_properties_last
+    - unnecessary_await_in_return
+    - use_decorated_box # en vez de Container sin decoración
+    - use_key_in_widget_constructors
+    - use_super_parameters
+
+# Config opcional para dart_code_metrics (si lo añadimos más abajo)
+dart_code_metrics:
+  anti-patterns:
+    - long-method
+    - long-parameter-list
+  metrics:
+    cyclomatic-complexity: 20
+    lines-of-code: 120
+    maximum-nesting-level: 4
+    number-of-parameters: 6
+    source-lines-of-code: 100
+  metrics-exclude:
+    - test/**
+  rules:
+    - no-boolean-literal-compare
+    - no-equal-then-else
+    - no-magic-number:
+        severity: style
+        allowed: [0, 1, 2, 10, 60, 1000]
+    - prefer-trailing-comma
+    - no-empty-block

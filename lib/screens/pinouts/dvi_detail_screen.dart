@@ -1,6 +1,6 @@
 // lib/screens/pinouts/dvi_detail_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart'; // ¡NUEVO! Importa la pantalla de visualización de imagen
+import 'package:flutter/material.dart';
 
 const String _dviTitle = 'Conector DVI (Digital Visual Interface)';
 const String _dviImagePath =
@@ -468,8 +468,8 @@ class DVIDetailScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageViewerScreen(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const ImageViewerScreen(
                         imagePath: _dviImagePath,
                         title:
                             _dviTitle, // Pasa el título para la pantalla de zoom
@@ -602,7 +602,7 @@ class DVIDetailScreen extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (context) => ImageViewerScreen(
                                   imagePath: item['imagen_pinout']!,
                                   title:

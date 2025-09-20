@@ -1,6 +1,6 @@
 // lib/screens/pinouts/arduino_uno_board_screen.dart
-import 'package:flutter/material.dart';
 import 'package:calculadora_electronica/screens/image_viewer_screen.dart';
+import 'package:flutter/material.dart';
 
 const String _arduinoUnoTitle = 'Pinout de la placa Arduino Uno';
 const String _arduinoUnoImagePath =
@@ -237,8 +237,8 @@ class ArduinoUnoBoardScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => ImageViewerScreen(
+            MaterialPageRoute<void>(
+              builder: (context) => const ImageViewerScreen(
                 imagePath: _arduinoUnoImagePath,
                 title: _arduinoUnoTitle,
               ),
