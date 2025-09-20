@@ -524,7 +524,7 @@ class _DecibelCalculatorScreenState extends State<DecibelCalculatorScreen>
     required String label,
     required String value,
     required String unit,
-    required void Function(String) onChanged,
+    required ValueChanged<String> onChanged,
     required double min,
     required double max,
   }) {
