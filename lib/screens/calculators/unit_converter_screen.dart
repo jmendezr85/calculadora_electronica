@@ -297,7 +297,8 @@ class _UnitConverterScreenState extends State<UnitConverterScreen> {
 
     // Convertir el valor de la unidad de entrada a la unidad base de su categoría
     // Usamos totalConversionFactor que incluye el multiplicador del prefijo
-    final double valueInBaseUnit = inputValue * _inputUnit!.totalConversionFactor;
+    final double valueInBaseUnit =
+        inputValue * _inputUnit!.totalConversionFactor;
 
     // Convertir el valor de la unidad base a la unidad de salida
     final double convertedValue =
@@ -317,7 +318,8 @@ class _UnitConverterScreenState extends State<UnitConverterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<ElectronicUnit> unitsInSelectedCategory = _selectedCategory == null
+    final List<ElectronicUnit> unitsInSelectedCategory =
+        _selectedCategory == null
         ? []
         : ElectronicUnit.all
               .where((unit) => unit.category == _selectedCategory)
@@ -343,7 +345,7 @@ class _UnitConverterScreenState extends State<UnitConverterScreen> {
 
             // Selector de Categoría
             DropdownButtonFormField<String>(
-              value: _selectedCategory,
+              initialValue: _selectedCategory,
               decoration: InputDecoration(
                 labelText: 'Selecciona la Categoría de Unidad',
                 border: OutlineInputBorder(
@@ -395,7 +397,7 @@ class _UnitConverterScreenState extends State<UnitConverterScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<ElectronicUnit>(
-                    value: _inputUnit,
+                    initialValue: _inputUnit,
                     decoration: InputDecoration(
                       labelText: 'De Unidad',
                       border: OutlineInputBorder(
@@ -422,7 +424,7 @@ class _UnitConverterScreenState extends State<UnitConverterScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: DropdownButtonFormField<ElectronicUnit>(
-                    value: _outputUnit,
+                    initialValue: _outputUnit,
                     decoration: InputDecoration(
                       labelText: 'A Unidad',
                       border: OutlineInputBorder(

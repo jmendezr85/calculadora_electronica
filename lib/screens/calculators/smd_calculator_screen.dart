@@ -335,7 +335,7 @@ class _SMDCalculatorScreenState extends State<SMDCalculatorScreen> {
             ),
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
-              value: _selectedComponentType,
+              initialValue: _selectedComponentType,
               decoration: InputDecoration(
                 labelText: 'Selecciona Tipo de Componente',
                 border: OutlineInputBorder(

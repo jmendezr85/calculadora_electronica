@@ -263,31 +263,32 @@ class _BatteryLifeCalculatorScreenState
 
             const SizedBox(height: 20),
             Text('Método de entrada:', style: theme.textTheme.titleMedium),
-            Row(
-              children: [
-                Expanded(
-                  child: RadioListTile(
-                    title: const Text('Corriente'),
-                    value: true,
-                    groupValue: _directCurrentInputMode,
-                    onChanged: (v) => setState(() {
-                      _directCurrentInputMode = v ?? true;
-                      _clearCalculations();
-                    }),
+
+            RadioGroup<bool>(
+              groupValue: _directCurrentInputMode,
+              onChanged: (bool? v) {
+                setState(() {
+                  _directCurrentInputMode = v ?? _directCurrentInputMode;
+                  _clearCalculations();
+                });
+              },
+              // 👇 Todo este child puede ser const
+              child: const Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<bool>(
+                      title: Text('Corriente'),
+                      value: true,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: RadioListTile(
-                    title: const Text('Potencia/Voltaje'),
-                    value: false,
-                    groupValue: _directCurrentInputMode,
-                    onChanged: (v) => setState(() {
-                      _directCurrentInputMode = v ?? false;
-                      _clearCalculations();
-                    }),
+                  Expanded(
+                    child: RadioListTile<bool>(
+                      title: Text('Potencia/Voltaje'),
+                      value: false,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
 
             if (_directCurrentInputMode)
@@ -426,7 +427,7 @@ class _BatteryLifeCalculatorScreenState
                             value: _showAdvancedChart,
                             onChanged: (v) =>
                                 setState(() => _showAdvancedChart = v),
-                            activeColor: Colors.deepPurple,
+                            activeThumbColor: Colors.deepPurple,
                           ),
                         ],
                       ),

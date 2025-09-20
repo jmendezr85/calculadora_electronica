@@ -104,7 +104,9 @@ class _InductorColorCodeScreenState extends State<InductorColorCodeScreen> {
         return;
       }
 
-      final String baseValueString = _is5Band ? '$val1$val2$val3' : '$val1$val2';
+      final String baseValueString = _is5Band
+          ? '$val1$val2$val3'
+          : '$val1$val2';
       final double baseValue = double.parse(baseValueString);
 
       final double inductorValue = baseValue * multiplier;

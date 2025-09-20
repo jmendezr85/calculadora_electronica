@@ -446,7 +446,7 @@ class _AdcCalculatorScreenState extends State<AdcCalculatorScreen>
                             value: _showAdvancedChart,
                             onChanged: (v) =>
                                 setState(() => _showAdvancedChart = v),
-                            activeColor: Colors.deepPurple,
+                            activeThumbColor: Colors.deepPurple,
                           ),
                         ],
                       ),

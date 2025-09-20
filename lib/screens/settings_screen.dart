@@ -177,26 +177,32 @@ class _ThemeDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return SimpleDialog(
       title: Text(l10n.translate('chooseTheme')),
       children: [
-        RadioListTile<ThemeMode>(
-          value: ThemeMode.system,
-          groupValue: settings.themeMode,
-          onChanged: (v) => settings.setThemeMode(v!),
-          title: Text(l10n.translate('systemTheme')),
-        ),
-        RadioListTile<ThemeMode>(
-          value: ThemeMode.light,
-          groupValue: settings.themeMode,
-          onChanged: (v) => settings.setThemeMode(v!),
-          title: Text(l10n.translate('lightTheme')),
-        ),
-        RadioListTile<ThemeMode>(
-          value: ThemeMode.dark,
-          groupValue: settings.themeMode,
-          onChanged: (v) => settings.setThemeMode(v!),
-          title: Text(l10n.translate('darkTheme')),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SegmentedButton<ThemeMode>(
+            segments: [
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.system,
+                label: Text(l10n.translate('systemTheme')),
+              ),
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.light,
+                label: Text(l10n.translate('lightTheme')),
+              ),
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.dark,
+                label: Text(l10n.translate('darkTheme')),
+              ),
+            ],
+            selected: {settings.themeMode},
+            onSelectionChanged: (selection) {
+              settings.setThemeMode(selection.first);
+            },
+          ),
         ),
       ],
     );
@@ -658,12 +664,14 @@ class _AppInfoSectionState extends State<_AppInfoSection> {
     }
   }
 
-  void _shareApp() {
+  Future<void> _shareApp() async {
     const fallback = '¡Prueba esta app!';
     final msg = _packageName.isNotEmpty
         ? '¡Prueba esta app! https://play.google.com/store/apps/details?id=$_packageName'
         : fallback;
-    Share.share(msg);
+
+    // API nueva de share_plus:
+    await SharePlus.instance.share(ShareParams(text: msg));
   }
 
   @override

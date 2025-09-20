@@ -404,7 +404,7 @@ class _ResistorColorCodeScreenState extends State<ResistorColorCodeScreen> {
           ),
         ),
         dropdownColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        value: selectedValue,
+        initialValue: selectedValue,
         hint: const Text('Selecciona color'),
         onChanged: (newValue) {
           setState(() {

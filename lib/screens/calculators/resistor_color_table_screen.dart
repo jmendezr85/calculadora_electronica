@@ -170,9 +170,7 @@ class ResistorColorTableScreen extends StatelessWidget {
                             border:
                                 item['Color'] == 'Blanco' ||
                                     item['Color'] == 'Amarillo'
-                                ? Border.all(
-                                    color: Colors.grey.shade400,
-                                  )
+                                ? Border.all(color: Colors.grey.shade400)
                                 : null,
                           ),
                           // ELIMINA la línea 'color: _getColor(item['Color']!),' si estaba aquí fuera del decoration.

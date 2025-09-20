@@ -273,22 +273,22 @@ class _PcbTraceWidthCalculatorScreenState
               'Tipo de Capa:',
               style: Theme.of(context).textTheme.titleSmall,
             ),
-            Row(
-              children: _layerTypes.map((type) {
-                return Expanded(
-                  child: RadioListTile<String>(
-                    title: Text(type),
-                    value: type,
-                    groupValue: _layerType,
-                    onChanged: (value) {
-                      setState(() {
-                        _layerType = value!;
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
+            const SizedBox(height: 8),
+            SegmentedButton<String>(
+              segments: _layerTypes
+                  .map(
+                    (type) =>
+                        ButtonSegment<String>(value: type, label: Text(type)),
+                  )
+                  .toList(),
+              selected: {_layerType},
+              onSelectionChanged: (Set<String> selection) {
+                setState(() {
+                  _layerType = selection.first;
+                });
+              },
             ),
+
             const SizedBox(height: 15),
             _buildUnitInputField(
               controller: _traceLengthController,

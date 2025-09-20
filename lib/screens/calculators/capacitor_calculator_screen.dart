@@ -440,7 +440,7 @@ class _CapacitorCalculatorScreenState extends State<CapacitorCalculatorScreen>
                             value: _showAdvancedResults,
                             onChanged: (v) =>
                                 setState(() => _showAdvancedResults = v),
-                            activeColor: Colors.deepPurple,
+                            activeThumbColor: Colors.deepPurple,
                           ),
                         ],
                       ),

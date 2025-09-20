@@ -257,7 +257,7 @@ class _VoltageDropCalculatorState extends State<VoltageDropCalculator> {
         child: Column(
           children: [
             DropdownButtonFormField<String>(
-              value: _selectedMaterial,
+              initialValue: _selectedMaterial,
               items: _materialDB.keys
                   .map(
                     (material) => DropdownMenuItem(
@@ -274,7 +274,7 @@ class _VoltageDropCalculatorState extends State<VoltageDropCalculator> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedAWG,
+                    initialValue: _selectedAWG,
                     items: _cableDB.keys
                         .map(
                           (awg) => DropdownMenuItem(
@@ -293,7 +293,7 @@ class _VoltageDropCalculatorState extends State<VoltageDropCalculator> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _selectedCableType,
+                      initialValue: _selectedCableType,
                       items: _cableTypes
                           .map(
                             (type) => DropdownMenuItem(

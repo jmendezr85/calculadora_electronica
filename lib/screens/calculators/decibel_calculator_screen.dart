@@ -392,7 +392,7 @@ class _DecibelCalculatorScreenState extends State<DecibelCalculatorScreen>
                             value: _showAdvancedChart,
                             onChanged: (v) =>
                                 setState(() => _showAdvancedChart = v),
-                            activeColor: Colors.deepPurple,
+                            activeThumbColor: Colors.deepPurple,
                           ),
                         ],
                       ),

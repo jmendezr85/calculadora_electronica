@@ -309,7 +309,7 @@ $_heatsinkAdvice
             const SizedBox(width: 8),
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: selectedUnit,
+                initialValue: selectedUnit,
                 items: units
                     .map(
                       (unit) =>

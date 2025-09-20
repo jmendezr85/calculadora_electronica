@@ -1,48 +1,58 @@
 name: calculadora_electronica
 description: "Calculadora electrónica con múltiples herramientas para diseño de circuitos"
-
 publish_to: "none"
 
 version: 1.0.0+1
 
 environment:
   sdk: ">=3.8.1 <4.0.0"
+  # Si tu Flutter es reciente (3.24+), esto es seguro. Si usas uno más viejo, puedes omitirlo.
+  # flutter: ">=3.24.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
-  share_plus: ^10.0.0
-  shared_preferences: ^2.2.0
-  url_launcher: ^6.3.0
-  fl_chart: ^0.68.0
-  intl: ^0.20.2
-  math_expressions: ^3.1.0
-  path_provider: ^2.1.1
-  vector_math: ^2.1.4
-  package_info_plus: ^8.0.0
-  provider: ^6.1.5+1
-  photo_view: ^0.15.0 # <--- ¡IMPORTANTE! Asegúrate de que esté aquí, no en dev_dependencies
+
   flutter_localizations:
     sdk: flutter
+  intl: ^0.20.2
+
+  # UI / utilidades
+  cupertino_icons: ^1.0.8
+  provider: ^6.1.5+1
+
+  # Paquetes usados en pantallas del proyecto
+  fl_chart: ^1.1.1
+  photo_view: ^0.15.0
+  package_info_plus: ^9.0.0
+  url_launcher: ^6.3.0
+  share_plus: ^12.0.0
+  shared_preferences: ^2.2.3
+  path_provider: ^2.1.5
+
+  # Cálculo y parsing
+  math_expressions: ^3.1.0
+  vector_math: ^2.1.4
+  xml: ^6.5.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
 
-  # Para tus assets (imágenes, etc.)
+  # Assets del proyecto (carpetas completas para evitar declarar archivo por archivo)
   assets:
-    - assets/images/regulators/linear/lm317_circuit.png
-    - assets/images/pinouts/ # <--- ¡IMPORTANTE! Para las imágenes de pin-outs
+    - assets/images/
+    - assets/images/pinouts/
     - assets/lang/
-    - assets/branding/ # <--- Línea agregada para los logos
+    - assets/branding/
 
+# Config de iconos (flutter_launcher_icons)
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/branding/logo_calcuvolt.png" # Ruta a tu logo principal
+  image_path: "assets/branding/logo_calcuvolt.png"

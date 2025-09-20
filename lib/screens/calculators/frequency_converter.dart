@@ -128,7 +128,7 @@ class _FrequencyConverterState extends State<FrequencyConverter> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _fromUnit,
+                    initialValue: _fromUnit,
                     items: _units
                         .map(
                           (unit) =>
@@ -145,7 +145,7 @@ class _FrequencyConverterState extends State<FrequencyConverter> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _toUnit,
+                    initialValue: _toUnit,
                     items: _units
                         .map(
                           (unit) =>
@@ -271,7 +271,7 @@ class _FrequencyConverterState extends State<FrequencyConverter> {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
-          value: _medium,
+          initialValue: _medium,
           items: _mediumSpeeds.keys
               .map(
                 (medium) =>
@@ -396,9 +396,7 @@ class _FrequencyConverterState extends State<FrequencyConverter> {
                         },
                       ),
                     ),
-                    leftTitles: const AxisTitles(
-                      
-                    ),
+                    leftTitles: const AxisTitles(),
                   ),
                   gridData: const FlGridData(show: false),
                   borderData: FlBorderData(show: false),
