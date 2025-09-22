@@ -26,6 +26,7 @@ import 'package:calculadora_electronica/screens/calculators/voltage_divider_scre
 import 'package:calculadora_electronica/screens/calculators/voltage_drop_calculator.dart';
 import 'package:calculadora_electronica/screens/calculators/voltage_regulator_screen.dart';
 import 'package:calculadora_electronica/screens/calculators/zener_diode_code_screen.dart';
+import 'package:calculadora_electronica/screens/servo_ble_screen.dart';
 import 'package:flutter/material.dart';
 
 class CalculatorsListScreen extends StatelessWidget {
@@ -198,6 +199,12 @@ class CalculatorsListScreen extends StatelessWidget {
         'screen': const ElectronicSymbolsScreen(),
         'icon': Icons.graphic_eq,
         'color': Colors.deepPurple[700],
+      },
+      {
+        'name': 'Control Servo BLE',
+        'screen': const ServoBleScreen(),
+        'icon': Icons.settings_remote,
+        'color': Colors.blueAccent[700],
       },
     ];
 
