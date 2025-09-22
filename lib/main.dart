@@ -1,10 +1,13 @@
+// ===== package: =====
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// ===== relative: =====
 import 'app_localizations.dart';
 import 'screens/main_dashboard_screen.dart';
+import 'screens/servo_ble_screen.dart';
 import 'screens/settings_screen.dart';
 
 /// =============================================================
@@ -201,7 +204,10 @@ class MyApp extends StatelessWidget {
           },
 
           // Rutas
-          routes: {'/settings': (_) => const SettingsScreen()},
+          routes: {
+            '/servos': (context) => const ServoBleScreen(),
+            '/settings': (_) => const SettingsScreen(),
+          },
 
           // MOSTRAR Splash mientras AppSettings termina de cargar
           home: settings.isReady
