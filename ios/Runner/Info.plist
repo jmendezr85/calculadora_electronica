@@ -43,7 +43,9 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+<key>UIApplicationSupportsIndirectInputEvents</key>
+        <true/>
+        <key>NSBluetoothAlwaysUsageDescription</key>
+        <string>La app usa Bluetooth para conectarse a dispositivos de laboratorio.</string>
 </dict>
 </plist>

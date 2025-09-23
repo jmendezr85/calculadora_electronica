@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io' show Platform;
 
+import 'package:calculadora_electronica/ble/nus_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,341 +14,249 @@ class ServoBleScreen extends StatefulWidget {
 }
 
 class _ServoBleScreenState extends State<ServoBleScreen> {
-  // UUIDs NUS
-  static final Guid nusService = Guid('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
-  static final Guid nusRx = Guid(
-    '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
-  ); // write
-  static final Guid nusTx = Guid(
-    '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
-  ); // notify
+  final NusClient _client = NusClient();
+  StreamSubscription<List<ScanResult>>? _scanSubscription;
+  StreamSubscription<String>? _lineSubscription;
 
-  BluetoothDevice? _device;
-  BluetoothCharacteristic? _rxChar;
-  BluetoothCharacteristic? _txChar;
-  StreamSubscription<List<int>>? _txSubscription;
+  List<ScanResult> _scanResults = <ScanResult>[];
+  BluetoothDevice? _selectedDevice;
+  BluetoothDevice? _connectedDevice;
 
-  bool _scanning = false;
-  bool _connecting = false;
-  bool _discovering = false;
+  bool _isScanning = false;
+  bool _isConnecting = false;
 
   double _angle = 90;
-  String _log = '';
+  final List<String> _logs = <String>[];
 
   @override
   void initState() {
     super.initState();
     _ensurePermissions();
+    _scanSubscription = FlutterBluePlus.scanResults.listen(_handleScanResults);
+    _lineSubscription = _client.lines().listen(_handleIncomingLine);
+  }
+
+  @override
+  void dispose() {
+    _lineSubscription?.cancel();
+    _scanSubscription?.cancel();
+    unawaited(_client.disconnect());
+    _client.dispose();
+    super.dispose();
   }
 
   Future<void> _ensurePermissions() async {
-    // Android 12+: los permisos de Bluetooth son de runtime
     if (Platform.isAndroid) {
       await [
         Permission.bluetoothScan,
         Permission.bluetoothConnect,
-        // Para compatibilidad con escaneo BLE en APIs antiguas
         Permission.locationWhenInUse,
       ].request();
     }
   }
 
-  void _appendLog(String message) {
-    _log = _log.isEmpty ? message : '$_log\n$message';
+  void _handleScanResults(List<ScanResult> results) {
+    final Map<String, ScanResult> deduped = <String, ScanResult>{};
+    for (final ScanResult result in results) {
+      deduped[result.device.remoteId.str] = result;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _scanResults = deduped.values.toList()
+        ..sort(
+          (ScanResult a, ScanResult b) =>
+              _deviceName(a.device).compareTo(_deviceName(b.device)),
+        );
+      if (_selectedDevice != null &&
+          !_scanResults.any(
+            (ScanResult r) => r.device.remoteId == _selectedDevice!.remoteId,
+          )) {
+        _selectedDevice = null;
+      }
+    });
+  }
+
+  void _handleIncomingLine(String line) {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _appendLog('<< $line');
+    });
   }
 
   Future<void> _startScan() async {
-    setState(() {
-      _scanning = true;
-      _appendLog('Escaneando dispositivos BLE...');
-    });
+    await _ensurePermissions();
+    await FlutterBluePlus.stopScan();
 
-    try {
-      await FlutterBluePlus.stopScan();
-      await FlutterBluePlus.startScan(
-        withServices: [nusService],
-        timeout: const Duration(seconds: 8),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _scanning = false;
-        _appendLog('Error al iniciar el escaneo: $e');
-      });
+    if (!mounted) {
       return;
     }
 
-    Future<void>.delayed(const Duration(seconds: 8)).then((_) {
-      if (!mounted) return;
-      setState(() => _scanning = false);
+    setState(() {
+      _isScanning = true;
+      _scanResults = <ScanResult>[];
+      _appendLog('Escaneo iniciado.');
     });
+
+    try {
+      await FlutterBluePlus.startScan(
+        withServices: <Guid>[NusClient.nusService],
+        timeout: const Duration(seconds: 6),
+      );
+    } catch (error) {
+      // Corregido: quitado 'Object'
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _appendLog('Error de escaneo: $error');
+      });
+    } finally {
+      if (mounted) {
+        // Corregido: quitado el return del finally
+        setState(() {
+          _isScanning = false;
+        });
+      }
+    }
   }
 
   Future<void> _connect(BluetoothDevice device) async {
-    await _txSubscription?.cancel();
-    _txSubscription = null;
-
-    final deviceName = device.platformName.isNotEmpty
-        ? device.platformName
-        : device.remoteId.str;
-
-    setState(() {
-      _connecting = true;
-      _device = device;
-      _appendLog('Conectando a $deviceName...');
-    });
-
     await FlutterBluePlus.stopScan();
-    if (mounted) {
-      setState(() => _scanning = false);
-    }
 
-    try {
-      await device.connect().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () async {
-          await device.disconnect();
-          throw Exception('Tiempo de conexión agotado');
-        },
-      );
-      if (!mounted) return;
-      setState(() => _appendLog('Conexión establecida.'));
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _appendLog('Error de conexión: $e');
-        if (_device?.remoteId == device.remoteId) {
-          _device = null;
-        }
-      });
+    if (!mounted) {
       return;
     }
 
-    if (!mounted) return;
-    setState(() => _connecting = false);
-
-    if (!mounted || _device == null) return;
-
-    await _discoverNus(device);
-  }
-
-  Future<void> _discoverNus(BluetoothDevice device) async {
     setState(() {
-      _discovering = true;
-      _rxChar = null;
-      _txChar = null;
-      _appendLog('Descubriendo servicios...');
+      _isScanning = false;
+      _isConnecting = true;
+      _selectedDevice = device;
+      _appendLog('Conectando a ${_deviceName(device)}...');
     });
 
-    String? message;
-    var ready = false;
-
     try {
-      final services = await device.discoverServices();
-      var serviceFound = false;
-
-      for (final service in services) {
-        if (service.uuid == nusService) {
-          serviceFound = true;
-          for (final characteristic in service.characteristics) {
-            if (characteristic.uuid == nusRx) {
-              _rxChar = characteristic;
-            } else if (characteristic.uuid == nusTx) {
-              _txChar = characteristic;
-            }
-          }
-        }
+      await _client.connect(device);
+      if (!mounted) {
+        return;
       }
-
-      await _txSubscription?.cancel();
-      _txSubscription = null;
-
-      final tx = _txChar;
-      if (tx != null) {
-        await tx.setNotifyValue(true);
-        _txSubscription = tx.onValueReceived.listen((data) {
-          final text = utf8.decode(data, allowMalformed: true).trim();
-          if (!mounted) return;
-          setState(() {
-            _appendLog(text.isEmpty ? '<< (mensaje vacío)' : '<< $text');
-          });
+      setState(() {
+        _connectedDevice = device;
+        _appendLog('Conexión establecida.');
+      });
+    } catch (error) {
+      // Corregido: quitado 'Object'
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _connectedDevice = null;
+        _appendLog('Error al conectar: $error');
+      });
+    } finally {
+      if (mounted) {
+        // Corregido: quitado el return del finally
+        setState(() {
+          _isConnecting = false;
         });
       }
-
-      ready = _rxChar != null && _txChar != null;
-      if (!serviceFound) {
-        message = 'Servicio NUS no disponible en el dispositivo.';
-      } else if (!ready) {
-        message = 'No se encontraron las características NUS esperadas.';
-      }
-    } catch (e) {
-      message = 'Error al descubrir servicios: $e';
     }
-
-    if (!mounted) return;
-
-    setState(() {
-      _discovering = false;
-      if (ready) {
-        _appendLog('Servicio NUS listo.');
-      } else if (message != null) {
-        _appendLog(message);
-      }
-    });
-  }
-
-  Future<void> _sendAngle(int angle) async {
-    final rx = _rxChar;
-    if (rx == null) {
-      if (!mounted) return;
-      setState(() => _appendLog('No hay característica RX disponible.'));
-      return;
-    }
-
-    final command = 'A:$angle\n';
-
-    try {
-      await rx.write(utf8.encode(command), withoutResponse: true);
-      if (!mounted) return;
-      setState(() => _appendLog('>> A:$angle'));
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _appendLog('Error al enviar ángulo: $e'));
-    }
-  }
-
-  Future<void> _setAngle(int angle) async {
-    if (!mounted) return;
-    setState(() => _angle = angle.toDouble());
-    await _sendAngle(angle);
   }
 
   Future<void> _disconnect() async {
-    final device = _device;
-    if (device == null) return;
-
-    await FlutterBluePlus.stopScan();
-    await _txSubscription?.cancel();
-    _txSubscription = null;
-
-    final deviceName = device.platformName.isNotEmpty
-        ? device.platformName
-        : device.remoteId.str;
-
     setState(() {
-      _connecting = false;
-      _discovering = false;
-      _appendLog('Desconectando de $deviceName...');
-      _device = null;
-      _rxChar = null;
-      _txChar = null;
+      _isConnecting = true;
+      _appendLog('Desconectando...');
     });
+    await _client.disconnect();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _isConnecting = false;
+      _connectedDevice = null;
+      _appendLog('Dispositivo desconectado.');
+    });
+  }
 
+  Future<void> _setAngle(double value) async {
+    final int angle = value.round().clamp(0, 180);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _angle = angle.toDouble();
+    });
+    if (!_client.isReady) {
+      setState(() {
+        _appendLog('Servicio NUS no disponible.');
+      });
+      return;
+    }
     try {
-      await device.disconnect();
-      if (!mounted) return;
-      setState(() => _appendLog('Dispositivo desconectado.'));
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _appendLog('Error al desconectar: $e'));
+      await _client.writeString('A:$angle\n');
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _appendLog('>> A:$angle');
+      });
+    } catch (error) {
+      // Corregido: quitado 'Object'
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _appendLog('Error al enviar ángulo: $error');
+      });
     }
   }
 
-  void _clearLog() {
-    setState(() => _log = '');
+  void _appendLog(String message) {
+    _logs.add(message);
+    const int maxEntries = 120;
+    if (_logs.length > maxEntries) {
+      _logs.removeRange(0, _logs.length - maxEntries);
+    }
   }
 
-  bool get _isReady =>
-      _device != null && _rxChar != null && !_connecting && !_discovering;
-
-  @override
-  void dispose() {
-    _txSubscription?.cancel();
-    _device?.disconnect();
-    super.dispose();
+  String _deviceName(BluetoothDevice device) {
+    return device.platformName.isNotEmpty
+        ? device.platformName
+        : device.remoteId.str;
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isReady = _connectedDevice != null && _client.isReady;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Control Servo BLE')),
+      appBar: AppBar(title: const Text('Servos (BLE)')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildHeader(context),
+            _buildConnectionCard(isReady),
             const SizedBox(height: 16),
-            _buildConnectionCard(context),
+            _buildServoCard(isReady),
             const SizedBox(height: 16),
-            _buildServoControlCard(context),
-            const SizedBox(height: 16),
-            _buildLogCard(context),
+            _buildLogCard(colorScheme),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final theme = Theme.of(context);
-    final onContainer = theme.colorScheme.onPrimaryContainer;
-
-    return Card(
-      color: theme.colorScheme.primaryContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Icon(
-                Icons.settings_remote_rounded,
-                size: 32,
-                color: theme.colorScheme.onPrimary,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Control de servo BLE',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: onContainer,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Escanea un dispositivo compatible, conéctate y ajusta el ángulo del servo con precisión directamente desde tu teléfono.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: onContainer.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildConnectionCard(BuildContext context) {
-    final theme = Theme.of(context);
-    final connectedDevice = _device;
-    final deviceName = connectedDevice != null
-        ? (connectedDevice.platformName.isNotEmpty
-              ? connectedDevice.platformName
-              : connectedDevice.remoteId.str)
-        : null;
+  Widget _buildConnectionCard(bool isReady) {
+    final String status = isReady
+        ? 'Conectado a ${_deviceName(_connectedDevice!)}'
+        : 'Sin conexión activa';
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -357,36 +265,29 @@ class _ServoBleScreenState extends State<ServoBleScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                backgroundColor: Color.alphaBlend(
-                  theme.colorScheme.primary.withValues(alpha: 0.12),
-                  theme.colorScheme.surface,
-                ),
-                child: Icon(
-                  connectedDevice != null
-                      ? Icons.bluetooth_connected_rounded
-                      : Icons.bluetooth_searching_rounded,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              title: Text(
-                deviceName ?? 'Ningún dispositivo conectado',
-                style: theme.textTheme.titleMedium,
-              ),
-              subtitle: Text(
-                connectedDevice != null
-                    ? 'ID: ${connectedDevice.remoteId.str}'
-                    : 'Inicia un escaneo para encontrar módulos BLE compatibles.',
-              ),
-              trailing: connectedDevice != null
-                  ? OutlinedButton.icon(
-                      onPressed: _disconnect,
-                      icon: const Icon(Icons.link_off_rounded, size: 18),
-                      label: const Text('Desconectar'),
-                    )
-                  : null,
+            Text('Dispositivo', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(status),
+            const SizedBox(height: 16),
+            DropdownButton<BluetoothDevice>(
+              value: _selectedDevice,
+              isExpanded: true,
+              hint: const Text('Selecciona un dispositivo'),
+              items: _scanResults
+                  .map(
+                    (ScanResult result) => DropdownMenuItem<BluetoothDevice>(
+                      value: result.device,
+                      child: Text(_deviceName(result.device)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: _isConnecting
+                  ? null
+                  : (BluetoothDevice? device) {
+                      if (device != null) {
+                        _connect(device);
+                      }
+                    },
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -394,120 +295,21 @@ class _ServoBleScreenState extends State<ServoBleScreen> {
               runSpacing: 12,
               children: [
                 ElevatedButton.icon(
-                  onPressed: _scanning ? null : _startScan,
-                  icon: const Icon(Icons.radar_rounded),
-                  label: Text(_scanning ? 'Escaneando...' : 'Escanear'),
+                  onPressed: _isScanning ? null : _startScan,
+                  icon: const Icon(Icons.search),
+                  label: Text(_isScanning ? 'Escaneando…' : 'Escanear'),
                 ),
-                if (connectedDevice != null)
+                if (isReady)
                   OutlinedButton.icon(
-                    onPressed: _discovering
-                        ? null
-                        : () => _discoverNus(connectedDevice),
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Redescubrir servicios'),
+                    onPressed: _disconnect,
+                    icon: const Icon(Icons.link_off),
+                    label: const Text('Desconectar'),
                   ),
               ],
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Chip(
-                  avatar: Icon(
-                    connectedDevice != null
-                        ? Icons.check_circle_rounded
-                        : Icons.info_outline_rounded,
-                    size: 18,
-                    color: theme.colorScheme.primary,
-                  ),
-                  label: Text(
-                    connectedDevice != null ? 'Conectado' : 'Sin conexión',
-                  ),
-                  backgroundColor: Color.alphaBlend(
-                    theme.colorScheme.primary.withValues(alpha: 0.08),
-                    theme.colorScheme.surface,
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                ),
-                if (_rxChar != null)
-                  Chip(
-                    avatar: Icon(
-                      Icons.memory_rounded,
-                      size: 18,
-                      color: theme.colorScheme.secondary,
-                    ),
-                    label: const Text('Servicio NUS listo'),
-                    backgroundColor: Color.alphaBlend(
-                      theme.colorScheme.secondary.withValues(alpha: 0.1),
-                      theme.colorScheme.surface,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
-              ],
-            ),
-            if (_scanning || _connecting || _discovering) ...[
+            if (_isConnecting) ...[
               const SizedBox(height: 16),
               const LinearProgressIndicator(),
-              const SizedBox(height: 8),
-              Text(
-                _scanning
-                    ? 'Buscando dispositivos cercanos...'
-                    : _connecting
-                    ? 'Estableciendo conexión...'
-                    : 'Descubriendo servicios...',
-              ),
-            ],
-            if (connectedDevice == null) ...[
-              const SizedBox(height: 16),
-              StreamBuilder<List<ScanResult>>(
-                stream: FlutterBluePlus.scanResults,
-                builder: (context, snapshot) {
-                  final results = snapshot.data ?? [];
-                  final seen = <String>{};
-                  final devices = <BluetoothDevice>[];
-
-                  for (final result in results) {
-                    final id = result.device.remoteId.str;
-                    if (seen.add(id)) {
-                      devices.add(result.device);
-                    }
-                  }
-
-                  if (devices.isEmpty) {
-                    return Text(
-                      _scanning
-                          ? 'Esperando resultados del escaneo...'
-                          : 'No se detectaron dispositivos recientes.',
-                    );
-                  }
-
-                  return DropdownButtonFormField<BluetoothDevice>(
-                    decoration: const InputDecoration(
-                      labelText: 'Dispositivos disponibles',
-                      border: OutlineInputBorder(),
-                    ),
-                    isExpanded: true,
-                    items: devices
-                        .map(
-                          (device) => DropdownMenuItem(
-                            value: device,
-                            child: Text(
-                              device.platformName.isNotEmpty
-                                  ? device.platformName
-                                  : device.remoteId.str,
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (device) {
-                      if (device != null) {
-                        _connect(device);
-                      }
-                    },
-                  );
-                },
-              ),
             ],
           ],
         ),
@@ -515,10 +317,7 @@ class _ServoBleScreenState extends State<ServoBleScreen> {
     );
   }
 
-  Widget _buildServoControlCard(BuildContext context) {
-    final theme = Theme.of(context);
-    final ready = _isReady;
-
+  Widget _buildServoCard(bool isReady) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -527,40 +326,14 @@ class _ServoBleScreenState extends State<ServoBleScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Text(
-                    'Ángulo del servo',
-                    style: theme.textTheme.titleMedium,
-                  ),
+                Text(
+                  'Ángulo del servo',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Color.alphaBlend(
-                      theme.colorScheme.primary.withValues(alpha: 0.1),
-                      theme.colorScheme.surface,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${_angle.round()}°',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                Text('${_angle.round()}°'),
               ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              ready
-                  ? 'Arrastra el control para posicionar el servo con precisión.'
-                  : 'Conéctate a un dispositivo compatible para habilitar el control.',
             ),
             const SizedBox(height: 16),
             Slider(
@@ -568,51 +341,25 @@ class _ServoBleScreenState extends State<ServoBleScreen> {
               max: 180,
               divisions: 180,
               label: '${_angle.round()}°',
-              onChanged: ready
-                  ? (value) => setState(() => _angle = value)
-                  : null,
-              onChangeEnd: ready ? (value) => _sendAngle(value.round()) : null,
+              onChanged: isReady && !_isConnecting ? _setAngle : null,
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                OutlinedButton(
-                  onPressed: ready ? () => _setAngle(0) : null,
-                  child: const Text('0°'),
-                ),
-                OutlinedButton(
-                  onPressed: ready ? () => _setAngle(90) : null,
-                  child: const Text('90°'),
-                ),
-                OutlinedButton(
-                  onPressed: ready ? () => _setAngle(180) : null,
-                  child: const Text('180°'),
-                ),
-                if (ready)
-                  OutlinedButton.icon(
-                    onPressed: () => _setAngle(_angle.round()),
-                    icon: const Icon(Icons.send_rounded, size: 18),
-                    label: const Text('Enviar de nuevo'),
+            if (!isReady)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Conéctate a un dispositivo NUS para habilitar el control.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
                   ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Consejo: utiliza los accesos rápidos para mover el servo a posiciones clave y después afina con el deslizador.',
-              style: theme.textTheme.bodySmall,
-            ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLogCard(BuildContext context) {
-    final theme = Theme.of(context);
-    final logs = _log.isEmpty ? 'Aún no hay mensajes.' : _log;
-
+  Widget _buildLogCard(ColorScheme colorScheme) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -622,43 +369,39 @@ class _ServoBleScreenState extends State<ServoBleScreen> {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    'Registro de eventos',
-                    style: theme.textTheme.titleMedium,
-                  ),
+                Text(
+                  'Actividad',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                if (_log.isNotEmpty)
-                  TextButton.icon(
-                    onPressed: _clearLog,
-                    icon: const Icon(Icons.delete_sweep_rounded),
-                    label: const Text('Limpiar'),
-                  ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _logs.clear();
+                    });
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Limpiar historial',
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Container(
-              constraints: const BoxConstraints(minHeight: 160, maxHeight: 240),
-              decoration: BoxDecoration(
-                color: Color.alphaBlend(
-                  theme.colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.4,
-                  ),
-                  theme.colorScheme.surface,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.dividerColor),
-              ),
+              constraints: const BoxConstraints(minHeight: 120, maxHeight: 200),
               padding: const EdgeInsets.all(12),
-              child: Scrollbar(
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    logs,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
-                      height: 1.4,
-                    ),
-                  ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: colorScheme
+                    .surfaceContainerHighest, // Corregido: surfaceVariant -> surfaceContainerHighest
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  _logs.isEmpty
+                      ? 'Sin actividad registrada.'
+                      : _logs.join('\n'),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
                 ),
               ),
             ),

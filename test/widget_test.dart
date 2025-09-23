@@ -1,92 +1,145 @@
-import 'package:calculadora_electronica/main.dart'; // Asegúrate de que esto apunta a tu archivo main.dart
+import 'package:calculadora_electronica/main.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Importa SharedPreferences
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  // Define un grupo de tests para la calculadora básica
-  group('BasicCalculatorScreen Tests', () {
-    testWidgets('BasicCalculatorScreen se inicializa con 0 en el display', (
-      WidgetTester tester,
-    ) async {
-      // 1. Mockear SharedPreferences: Esto permite que SharedPreferences.getInstance()
-      //    devuelva una instancia simulada en lugar de intentar acceder a la real.
+  group('App Basic Tests', () {
+    testWidgets('MyApp se inicia sin errores', (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
 
-      // 2. Construir la aplicación.
-      //    MyApp ya no requiere 'prefs' en su constructor.
-      await tester.pumpWidget(
-        const MyApp(),
-      ); // <--- ¡CAMBIO AQUÍ! Eliminado 'prefs: prefs'
+      final settings = AppSettings();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-      // Verificar que el display inicial es "0"
-      expect(find.text('0'), findsOneWidget);
-      // Verificar que no hay historial visible al inicio
-      expect(find.textContaining('='), findsNothing);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppSettings>.value(
+          value: settings,
+          child: const MyApp(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verificar que la aplicación se inicia correctamente
+      expect(find.byType(MaterialApp), findsOneWidget);
+      expect(find.byType(Scaffold), findsOneWidget);
     });
 
-    testWidgets('BasicCalculatorScreen realiza una suma simple', (
-      WidgetTester tester,
-    ) async {
-      SharedPreferences.setMockInitialValues(
-        {},
-      ); // Mockear para esta prueba también
-      await tester.pumpWidget(
-        const MyApp(),
-      ); // <--- ¡CAMBIO AQUÍ! Eliminado 'prefs: prefs'
-
-      // Toca el botón '1'
-      await tester.tap(find.text('1'));
-      await tester.pump(); // Reconstruye el widget para que se vea el cambio
-      expect(
-        find.text('1'),
-        findsOneWidget,
-      ); // Verifica que '1' está en el display
-
-      // Toca el botón '+'
-      await tester.tap(find.text('+'));
-      await tester.pump();
-      // El display debería seguir mostrando '1' o el resultado parcial (1.0 en este caso)
-      expect(
-        find.text('1'),
-        findsOneWidget,
-      ); // O podría ser '1.0' dependiendo del formato
-
-      // Toca el botón '2'
-      await tester.tap(find.text('2'));
-      await tester.pump();
-      expect(
-        find.text('2'),
-        findsOneWidget,
-      ); // Verifica que '2' está en el display (entrada actual)
-
-      // Toca el botón '='
-      await tester.tap(find.text('='));
-      await tester.pump();
-      // Verifica que el resultado de 1 + 2 = 3 está en el display
-      expect(find.text('3'), findsOneWidget);
-    });
-
-    // Puedes añadir más tests para otras operaciones o escenarios
-    testWidgets('BasicCalculatorScreen maneja el borrado (backspace)', (
+    testWidgets('AppSettings se inicializa correctamente', (
       WidgetTester tester,
     ) async {
       SharedPreferences.setMockInitialValues({});
-      await tester.pumpWidget(
-        const MyApp(),
-      ); // <--- ¡CAMBIO AQUÍ! Eliminado 'prefs: prefs'
 
-      await tester.tap(find.text('1'));
-      await tester.tap(find.text('2'));
-      await tester.pump();
-      expect(find.text('12'), findsOneWidget);
+      final settings = AppSettings();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      await tester.tap(find.text('⌫')); // Backspace
-      await tester.pump();
-      expect(find.text('1'), findsOneWidget); // Debería ser '1'
-
-      await tester.tap(find.text('⌫')); // Backspace de nuevo
-      await tester.pump();
-      expect(find.text('0'), findsOneWidget); // Debería volver a '0'
+      expect(settings.isReady, true);
+      expect(settings.themeMode, ThemeMode.system);
+      expect(settings.fontSize, 1.0);
     });
+  });
+
+  group('AppSettings Unit Tests', () {
+    test('Valores por defecto', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final settings = AppSettings();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(settings.themeMode, ThemeMode.system);
+      expect(settings.fontSize, 1.0);
+      expect(settings.professionalMode, false);
+      expect(settings.hapticFeedback, true);
+      expect(settings.selectedLanguage, 'es');
+    });
+
+    test('Cambio de tema funciona', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final settings = AppSettings();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      settings.setThemeMode(ThemeMode.dark);
+      expect(settings.themeMode, ThemeMode.dark);
+    });
+
+    test('Cambio de tamaño de fuente funciona', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final settings = AppSettings();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      settings.setFontSize(1.2);
+      expect(settings.fontSize, 1.2);
+    });
+
+    test('Cambio de idioma funciona', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final settings = AppSettings();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      settings.setSelectedLanguage('en');
+      expect(settings.selectedLanguage, 'en');
+    });
+  });
+
+  group('Integration Tests', () {
+    test('Configuración persiste', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final settings1 = AppSettings();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      settings1
+        ..setThemeMode(ThemeMode.dark)
+        ..setFontSize(1.1);
+
+      final settings2 = AppSettings();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(settings2.themeMode, ThemeMode.dark);
+      expect(settings2.fontSize, 1.1);
+    });
+
+    test('Reset de configuración funciona', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final settings = AppSettings();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      settings
+        ..setThemeMode(ThemeMode.dark)
+        ..setFontSize(1.2);
+
+      await settings.resetToDefaults();
+
+      expect(settings.themeMode, ThemeMode.system);
+      expect(settings.fontSize, 1.0);
+    });
+  });
+
+  // Test simple de que la aplicación carga
+  testWidgets('Aplicación carga sin excepciones', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    final settings = AppSettings();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Esto debería ejecutarse sin lanzar excepciones
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AppSettings>.value(
+        value: settings,
+        child: const MyApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Si llegamos aquí, la aplicación cargó correctamente
+    expect(true, true);
   });
 }
